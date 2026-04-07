@@ -8,7 +8,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class AuditClient {
     private final RestTemplate restTemplate;
