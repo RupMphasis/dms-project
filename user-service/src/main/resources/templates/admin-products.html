@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Product Management</title>
+</head>
+<body>
+    <h1>Products</h1>
+    <div th:if="${products}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${products}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.name}"></td>
+                    <td th:text="${p.description}"></td>
+                    <td th:text="${p.price}"></td>
+                    <td th:text="${p.stock}"></td>
+                    <td th:text="${p.active}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>
+        <a href="/users/admin/dashboard">Back to Admin Dashboard</a> |
+        <a href="/users/admin/orders">View Orders</a> |
+        <a href="/users/admin/audit">Audit Logs</a> |
+        <a href="/users/logout">Logout</a>
+    </p>
+</body>
+</html>

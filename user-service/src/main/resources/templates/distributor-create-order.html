@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Order</title>
+</head>
+<body>
+    <h1>Place New Order</h1>
+
+    <div th:if="${message}" style="color: green;">
+        <p th:text="${message}"></p>
+    </div>
+
+    <form th:action="@{/users/distributor/order/create}" th:object="${orderCreateDto}" method="post">
+        <input type="hidden" th:field="*{distributorId}" />
+        <label>Product ID: </label>
+        <input type="number" th:field="*{productId}" required/><br/><br/>
+        <label>Quantity: </label>
+        <input type="number" th:field="*{quantity}" required min="1"/><br/><br/>
+        <button type="submit">Submit Order</button>
+    </form>
+
+    <p>
+        <a href="/users/distributor/orders">View My Orders</a> |
+        <a href="/users/distributor/dashboard">Back</a> |
+        <a href="/users/logout">Logout</a>
+    </p>
+</body>
+</html>

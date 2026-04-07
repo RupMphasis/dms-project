@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Audit Logs</title>
+</head>
+<body>
+    <h1>Audit Logs</h1>
+    <p>
+        <a href="/users/admin/dashboard">Back to Dashboard</a> |
+        <a href="/users/admin/products">Manage Products</a> |
+        <a href="/users/admin/orders">View Orders</a> |
+        <a href="/users/logout">Logout</a>
+    </p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Event Type</th>
+                <th>Actor</th>
+                <th>Target Type</th>
+                <th>Target ID</th>
+                <th>Details</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="event : ${events}">
+                <td th:text="${event.id}"></td>
+                <td th:text="${event.eventType}"></td>
+                <td th:text="${event.actor}"></td>
+                <td th:text="${event.targetType}"></td>
+                <td th:text="${event.targetId}"></td>
+                <td th:text="${event.details}"></td>
+                <td th:text="${event.timestamp}"></td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Distributor Orders</title>
+</head>
+<body>
+    <h1>My Orders</h1>
+    <div th:if="${orders}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product ID</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="o : ${orders}">
+                    <td th:text="${o.id}"></td>
+                    <td th:text="${o.productId}"></td>
+                    <td th:text="${o.quantity}"></td>
+                    <td th:text="${o.status}"></td>
+                    <td th:text="${o.createdAt}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>
+        <a href="/users/distributor/dashboard">Back to Distributor Dashboard</a> |
+        <a href="/users/logout">Logout</a>
+    </p>
+</body>
+</html>
