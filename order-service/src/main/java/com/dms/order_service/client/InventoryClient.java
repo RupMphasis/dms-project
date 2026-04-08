@@ -32,6 +32,18 @@ public class InventoryClient {
         return response.getBody().getQuantity();
     }
 
+    public void createInventory(Long productId, Integer quantity, String location) {
+        InventoryRequest request = new InventoryRequest();
+        request.setProductId(productId);
+        request.setQuantity(quantity);
+        request.setLocation(location);
+        String url = inventoryServiceUrl + "/api/inventory";
+        ResponseEntity<Void> response = restTemplate.postForEntity(url, request, Void.class);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to create inventory for productId " + productId);
+        }
+    }
+
     private static class InventoryResponse {
         private Long id;
         private Long productId;
@@ -44,6 +56,36 @@ public class InventoryClient {
 
         public void setQuantity(Integer quantity) {
             this.quantity = quantity;
+        }
+    }
+
+    private static class InventoryRequest {
+        private Long productId;
+        private Integer quantity;
+        private String location;
+
+        public Long getProductId() {
+            return productId;
+        }
+
+        public void setProductId(Long productId) {
+            this.productId = productId;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
+
+        public String getLocation() {
+            return location;
+        }
+
+        public void setLocation(String location) {
+            this.location = location;
         }
     }
 }

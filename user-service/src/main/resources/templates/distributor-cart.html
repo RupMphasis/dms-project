@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Distributor Cart</title>
+</head>
+<body>
+    <h1>Shopping Cart</h1>
+
+    <div th:if="${message}" style="color: green;">
+        <p th:text="${message}"></p>
+    </div>
+    <div th:if="${error}" style="color: red;">
+        <p th:text="${error}"></p>
+    </div>
+
+    <div th:if="${cart.size() == 0}">
+        <p>Your cart is empty.</p>
+    </div>
+
+    <div th:if="${cart.size() > 0}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Name</th>
+                    <th>Vehicle Type</th>
+                    <th>Size</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Stock</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${cart}">
+                    <td th:text="${item.productId}"></td>
+                    <td th:text="${item.name}"></td>
+                    <td th:text="${item.vehicleType}"></td>
+                    <td th:text="${item.size}"></td>
+                    <td th:text="${item.price}"></td>
+                    <td th:text="${item.quantity}"></td>
+                    <td th:text="${item.stock}"></td>
+                    <td th:text="${item.quantity * item.price}"></td>
+                    <td>
+                        <form th:action="@{/users/distributor/cart/remove/{id}(id=${item.productId})}" method="post">
+                            <button type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>Total Quantity: <span th:text="${totalQuantity}"></span></p>
+        <p>Total Amount: <span th:text="${totalAmount}"></span></p>
+
+        <a th:href="@{/users/distributor/cart/checkout}"><button type="button">Checkout Cart</button></a>
+    </div>
+
+    <p>
+        <a href="/users/distributor/products">Back to Products</a> |
+        <a href="/users/distributor/orders">My Orders</a> |
+        <a href="/users/distributor/dashboard">Dashboard</a> |
+        <a href="/users/logout">Logout</a>
+    </p>
+</body>
+</html>

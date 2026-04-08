@@ -21,8 +21,11 @@ public class AuditController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<List<AuditEventDto>> getAllEvents() {
-        return ResponseEntity.ok(auditEventService.findAll());
+    public ResponseEntity<List<AuditEventDto>> getAllEvents(@RequestParam(required = false) String targetType) {
+        if (targetType == null || targetType.isBlank()) {
+            return ResponseEntity.ok(auditEventService.findAll());
+        }
+        return ResponseEntity.ok(auditEventService.findByTargetType(targetType));
     }
 
     @GetMapping("/events/{id}")

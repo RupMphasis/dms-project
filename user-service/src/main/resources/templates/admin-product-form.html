@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${formTitle}">Product Form</title>
+</head>
+<body>
+    <h1 th:text="${formTitle}">Product Form</h1>
+
+    <div th:if="${error}">
+        <p style="color: red;" th:text="${error}"></p>
+    </div>
+
+    <form th:action="${formAction}" method="post" th:object="${productDto}">
+        <input type="hidden" th:field="*{id}"/>
+
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" th:field="*{name}" required />
+        </div>
+
+        <div>
+            <label for="vehicleType">Vehicle Type:</label>
+            <select id="vehicleType" th:field="*{vehicleType}" required onchange="updateSizeOptions()">
+                <option value="" disabled selected>Select type</option>
+                <option value="SUV">SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="Truck">Truck</option>
+                <option value="Three Wheeler">Three Wheeler</option>
+                <option value="Two Wheeler">Two Wheeler</option>
+                <option value="Coupe">Coupe</option>
+                <option value="Van">Van</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="size">Size:</label>
+            <select id="size" th:field="*{size}" required>
+                <option value="" disabled selected>Select size</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="description">Description:</label>
+            <textarea id="description" th:field="*{description}" rows="4" cols="40"></textarea>
+        </div>
+
+        <div>
+            <label for="price">Price:</label>
+            <input type="number" step="0.01" id="price" th:field="*{price}" required />
+        </div>
+
+        <div>
+            <label for="stock">Stock:</label>
+            <input type="number" id="stock" th:field="*{stock}" required />
+        </div>
+
+        <div>
+            <label for="active">Active:</label>
+            <input type="checkbox" id="active" th:field="*{active}" />
+        </div>
+
+        <div>
+            <button type="submit">Save</button>
+            <a href="/users/admin/products">Cancel</a>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const sizeOptionsByType = {
+            'SUV': ['195/65 R15', '205/55 R16', '215/60 R16', '235/55 R17', '245/40 R18'],
+            'Sedan': ['195/65 R15', '205/55 R16', '225/45 R17', '235/55 R17', '245/40 R18'],
+            'Hatchback': ['175/65 R14', '185/65 R15', '195/60 R15', '205/55 R16'],
+            'Truck': ['7.50 R16', '8.25 R16', '9.00 R20', '10.00 R20'],
+            'Three Wheeler': ['4.00-10', '4.50-10', '5.00-10'],
+            'Two Wheeler': ['80/90 R17', '90/90 R18', '100/90 R18', '3.00-10', '3.50-10', '4.00-18'],
+            'Coupe': ['225/45 R17', '235/40 R18', '245/35 R19'],
+            'Van': ['195/65 R15', '205/65 R15', '215/70 R16']
+        };
+
+        function updateSizeOptions() {
+            const vehicleTypeSelect = document.getElementById('vehicleType');
+            const sizeSelect = document.getElementById('size');
+            const selectedType = vehicleTypeSelect.value;
+            const currentSize = /*[[${productDto.size}]]*/ '';
+
+            while (sizeSelect.firstChild) {
+                sizeSelect.removeChild(sizeSelect.firstChild);
+            }
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            defaultOption.textContent = 'Select size';
+            sizeSelect.appendChild(defaultOption);
+
+            if (!selectedType || !sizeOptionsByType[selectedType]) {
+                return;
+            }
+
+            sizeOptionsByType[selectedType].forEach(sizeValue => {
+                const option = document.createElement('option');
+                option.value = sizeValue;
+                option.textContent = sizeValue;
+                if (sizeValue === currentSize) {
+                    option.selected = true;
+                }
+                sizeSelect.appendChild(option);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateSizeOptions();
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>

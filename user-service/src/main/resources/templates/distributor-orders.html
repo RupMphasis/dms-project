@@ -5,6 +5,14 @@
 </head>
 <body>
     <h1>My Orders</h1>
+
+    <div th:if="${message}" style="color: green;">
+        <p th:text="${message}"></p>
+    </div>
+    <div th:if="${error}" style="color: red;">
+        <p th:text="${error}"></p>
+    </div>
+
     <div th:if="${orders}">
         <table border="1">
             <thead>
@@ -14,6 +22,7 @@
                     <th>Quantity</th>
                     <th>Status</th>
                     <th>Created</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -23,13 +32,20 @@
                     <td th:text="${o.quantity}"></td>
                     <td th:text="${o.status}"></td>
                     <td th:text="${o.createdAt}"></td>
+                    <td>
+                        <form th:action="@{/users/distributor/orders/{id}/delete(id=${o.id})}" method="post">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
     <p>
-        <a href="/users/distributor/dashboard">Back to Distributor Dashboard</a> |
+        <a href="/users/distributor/products">Continue Shopping</a> |
+        <a href="/users/distributor/cart">View Cart</a> |
+        <a href="/users/distributor/dashboard">Dashboard</a> |
         <a href="/users/logout">Logout</a>
     </p>
 </body>

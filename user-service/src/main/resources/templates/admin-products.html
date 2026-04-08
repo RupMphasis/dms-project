@@ -5,26 +5,46 @@
 </head>
 <body>
     <h1>Products</h1>
+    <div th:if="${message}">
+        <p style="color: green;" th:text="${message}"></p>
+    </div>
+    <div th:if="${error}">
+        <p style="color: red;" th:text="${error}"></p>
+    </div>
+    <p>
+        <a href="/users/admin/products/add">Add Product</a>
+    </p>
     <div th:if="${products}">
         <table border="1">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>Vehicle Type</th>
+                    <th>Size</th>
                     <th>Description</th>
                     <th>Price</th>
                     <th>Stock</th>
                     <th>Active</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="p : ${products}">
                     <td th:text="${p.id}"></td>
                     <td th:text="${p.name}"></td>
+                    <td th:text="${p.vehicleType}"></td>
+                    <td th:text="${p.size}"></td>
                     <td th:text="${p.description}"></td>
                     <td th:text="${p.price}"></td>
                     <td th:text="${p.stock}"></td>
                     <td th:text="${p.active}"></td>
+                    <td>
+                        <a th:href="@{'/users/admin/products/' + ${p.id} + '/edit'}">Edit</a>
+                        <form th:action="@{'/users/admin/products/' + ${p.id} + '/delete'}" method="post" style="display:inline; margin-left: 8px;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
                 </tr>
             </tbody>
         </table>

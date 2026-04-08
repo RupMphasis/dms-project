@@ -29,6 +29,21 @@ public class OrderEntity {
     @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false, length = 150)
+    private String customerName;
+
+    @Column(nullable = false, length = 20)
+    private String customerPhone;
+
+    @Column(nullable = false, length = 500)
+    private String shippingAddress;
+
+    @Column(nullable = false, length = 100)
+    private String shippingCity;
+
+    @Column(nullable = false, length = 20)
+    private String shippingPostalCode;
+
     @Column(nullable = false, length = 50)
     private String status;
 

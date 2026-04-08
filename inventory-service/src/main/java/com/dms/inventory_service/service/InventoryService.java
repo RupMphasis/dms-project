@@ -1,6 +1,7 @@
 package com.dms.inventory_service.service;
 
 import com.dms.inventory_service.entity.InventoryItem;
+import com.dms.inventory_service.exception.InventoryBadRequestException;
 import com.dms.inventory_service.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ public class InventoryService {
 
     public InventoryItem getByProductId(Long productId) {
         return inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new RuntimeException("Inventory item not found for productId: " + productId));
+                .orElseThrow(() -> new InventoryBadRequestException("Inventory item not found for productId: " + productId));
     }
 
     @Transactional
@@ -53,9 +54,10 @@ public class InventoryService {
         InventoryItem item = getByProductId(productId);
         int newQty = item.getQuantity() + delta;
         if (newQty < 0) {
-            throw new RuntimeException("Insufficient inventory for productId: " + productId);
+            throw new InventoryBadRequestException("Insufficient inventory for productId: " + productId);
         }
         item.setQuantity(newQty);
         inventoryRepository.save(item);
     }
+
 }

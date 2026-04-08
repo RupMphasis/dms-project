@@ -89,6 +89,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Apache HTTP client for PATCH support -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
+
 		<!-- Security Test -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>

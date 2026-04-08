@@ -21,16 +21,22 @@ public class ProductService {
     private final AuditClient auditClient;
 
     public List<Product> findAll() {
-        return productRepository.findAll();
+        List<Product> products = productRepository.findAll();
+        products.forEach(this::populateStockFromInventory);
+        return products;
     }
 
     public List<Product> findActive() {
-        return productRepository.findByActiveTrue();
+        List<Product> products = productRepository.findByActiveTrue();
+        products.forEach(this::populateStockFromInventory);
+        return products;
     }
 
     public Product getById(Long id) {
-        return productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
+        populateStockFromInventory(product);
+        return product;
     }
 
     public Integer getCurrentStock(Long productId) {
@@ -42,7 +48,15 @@ public class ProductService {
         if (product.getActive() == null) {
             product.setActive(true);
         }
+        Integer requestedStock = product.getStock();
+        product.setStock(0);
         Product saved = productRepository.save(product);
+        try {
+            inventoryClient.setStock(saved.getId(), requestedStock, "DEFAULT");
+            saved.setStock(requestedStock != null ? requestedStock : 0);
+        } catch (RuntimeException ex) {
+            throw new RuntimeException("Product created but failed to update inventory: " + ex.getMessage(), ex);
+        }
         auditClient.logEvent(new AuditEventDto(
                 null,
                 "PRODUCT_CREATED",
@@ -61,8 +75,12 @@ public class ProductService {
         existing.setName(incoming.getName());
         existing.setDescription(incoming.getDescription());
         existing.setPrice(incoming.getPrice());
-        existing.setStock(incoming.getStock());
         existing.setActive(incoming.getActive());
+        Integer requestedStock = incoming.getStock();
+        if (requestedStock != null) {
+            inventoryClient.setStock(existing.getId(), requestedStock, "DEFAULT");
+            existing.setStock(requestedStock);
+        }
         Product saved = productRepository.save(existing);
         auditClient.logEvent(new AuditEventDto(
                 null,
@@ -73,6 +91,7 @@ public class ProductService {
                 "Product updated: " + saved.getName(),
                 LocalDateTime.now()
         ));
+        populateStockFromInventory(saved);
         return saved;
     }
 
@@ -89,5 +108,13 @@ public class ProductService {
                 LocalDateTime.now()
         ));
         productRepository.delete(product);
+    }
+
+    private void populateStockFromInventory(Product product) {
+        try {
+            product.setStock(inventoryClient.getStock(product.getId()));
+        } catch (RuntimeException ex) {
+            product.setStock(0);
+        }
     }
 }

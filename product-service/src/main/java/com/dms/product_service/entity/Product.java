@@ -21,6 +21,12 @@ public class Product {
     @Column(nullable = false, length = 150)
     private String name;
 
+    @Column(nullable = false, length = 100)
+    private String vehicleType;
+
+    @Column(nullable = false, length = 50)
+    private String size;
+
     @Column(nullable = false, length = 500)
     private String description;
 

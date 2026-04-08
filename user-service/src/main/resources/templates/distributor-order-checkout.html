@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Checkout Order</title>
+</head>
+<body>
+    <h1>Checkout</h1>
+
+    <div th:if="${message}" style="color: green;">
+        <p th:text="${message}"></p>
+    </div>
+    <div th:if="${error}" style="color: red;">
+        <p th:text="${error}"></p>
+    </div>
+
+    <div th:if="${directProduct != null}">
+        <h2>Direct Buy</h2>
+        <p style="color: blue;">Orders placed from browse products are approved automatically.</p>
+        <p><strong>Product:</strong> <span th:text="${directProduct.name}"></span></p>
+        <p><strong>Vehicle Type:</strong> <span th:text="${directProduct.vehicleType}"></span></p>
+        <p><strong>Size:</strong> <span th:text="${directProduct.size}"></span></p>
+        <p><strong>Quantity:</strong> <span th:text="${orderCreateDto.quantity}"></span></p>
+        <p><strong>Price:</strong> <span th:text="${directProduct.price}"></span></p>
+    </div>
+
+    <div th:if="${directProduct == null}">
+        <h2>Cart Checkout</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${cart}">
+                    <td th:text="${item.productId}"></td>
+                    <td th:text="${item.name}"></td>
+                    <td th:text="${item.quantity}"></td>
+                    <td th:text="${item.price}"></td>
+                    <td th:text="${item.quantity * item.price}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <p><strong>Total:</strong> <span th:text="${cartTotalAmount}"></span></p>
+    </div>
+
+    <form th:action="@{/users/distributor/order/confirm}" th:object="${orderCreateDto}" method="post">
+        <input type="hidden" th:if="${directProduct} != null" th:field="*{productId}" />
+        <input type="hidden" th:if="${directProduct} != null" th:field="*{quantity}" />
+
+        <div>
+            <label for="customerName">Name:</label>
+            <input type="text" id="customerName" th:field="*{customerName}" required />
+        </div>
+        <div>
+            <label for="customerPhone">Phone:</label>
+            <input type="text" id="customerPhone" th:field="*{customerPhone}" required />
+        </div>
+        <div>
+            <label for="shippingAddress">Address:</label>
+            <textarea id="shippingAddress" th:field="*{shippingAddress}" rows="3" cols="40" required></textarea>
+        </div>
+        <div>
+            <label for="shippingCity">City:</label>
+            <input type="text" id="shippingCity" th:field="*{shippingCity}" required />
+        </div>
+        <div>
+            <label for="shippingPostalCode">Postal Code:</label>
+            <input type="text" id="shippingPostalCode" th:field="*{shippingPostalCode}" required />
+        </div>
+
+        <div>
+            <button type="submit">Place Order</button>
+            <a href="/users/distributor/products">Cancel</a>
+        </div>
+    </form>
+</body>
+</html>

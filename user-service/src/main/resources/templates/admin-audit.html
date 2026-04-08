@@ -11,7 +11,16 @@
         <a href="/users/admin/orders">View Orders</a> |
         <a href="/users/logout">Logout</a>
     </p>
-
+    <p>
+        Show:
+        <a th:href="@{/users/admin/audit}">All</a> |
+        <a th:href="@{/users/admin/audit(targetType='ORDER')}">Orders</a> |
+        <a th:href="@{/users/admin/audit(targetType='PRODUCT')}">Products</a> |
+        <a th:href="@{/users/admin/audit(targetType='USER')}">Users</a>
+    </p>
+    <div th:if="${selectedType}">
+        <strong th:text="'Showing ' + ${selectedType} + ' logs'"></strong>
+    </div>
     <table border="1">
         <thead>
             <tr>
