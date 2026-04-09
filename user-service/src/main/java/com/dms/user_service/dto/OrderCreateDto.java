@@ -1,6 +1,8 @@
 package com.dms.user_service.dto;
 
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDateTime;
 
 @Data
 public class OrderCreateDto {
@@ -13,4 +15,8 @@ public class OrderCreateDto {
     private String shippingCity;
     private String shippingPostalCode;
     private String status;
+    private String customMessage;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime fulfillmentTime;
 }

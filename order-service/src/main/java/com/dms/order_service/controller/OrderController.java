@@ -1,5 +1,6 @@
 package com.dms.order_service.controller;
 
+import com.dms.order_service.dto.OrderDecisionDto;
 import com.dms.order_service.entity.OrderEntity;
 import com.dms.order_service.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,12 @@ public class OrderController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderEntity> updateStatus(@PathVariable Long id, @RequestParam String status) {
-        return ResponseEntity.ok(orderService.updateStatus(id, status));
+        return ResponseEntity.ok(orderService.updateStatus(id, status, null));
+    }
+
+    @PostMapping("/{id}/decision")
+    public ResponseEntity<OrderEntity> decision(@PathVariable Long id, @RequestBody OrderDecisionDto decision) {
+        return ResponseEntity.ok(orderService.updateStatus(id, decision.getStatus(), decision.getAdminMessage()));
     }
 
     @DeleteMapping("/{id}")

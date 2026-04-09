@@ -1,5 +1,6 @@
 package com.dms.order_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,8 +48,58 @@ public class OrderEntity {
     @Column(nullable = false, length = 50)
     private String status;
 
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_details_id")
+    private OrderDetails orderDetails;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Transient
+    public String getCustomMessage() {
+        return orderDetails != null ? orderDetails.getCustomMessage() : null;
+    }
+
+    public void setCustomMessage(String customMessage) {
+        if (customMessage == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setCustomMessage(customMessage);
+    }
+
+    @Transient
+    public LocalDateTime getFulfillmentTime() {
+        return orderDetails != null ? orderDetails.getFulfillmentTime() : null;
+    }
+
+    public void setFulfillmentTime(LocalDateTime fulfillmentTime) {
+        if (fulfillmentTime == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setFulfillmentTime(fulfillmentTime);
+    }
+
+    @Transient
+    public String getAdminMessage() {
+        return orderDetails != null ? orderDetails.getAdminMessage() : null;
+    }
+
+    public void setAdminMessage(String adminMessage) {
+        if (adminMessage == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setAdminMessage(adminMessage);
+    }
 
     @PrePersist
     public void prePersist() {

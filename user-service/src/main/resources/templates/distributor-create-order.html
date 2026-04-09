@@ -21,6 +21,15 @@
         <label>Quantity: </label>
         <input type="number" th:field="*{quantity}" required min="1"/><br/><br/>
         <div>
+            <label>Message for Admin:</label><br/>
+            <textarea th:field="*{customMessage}" rows="4" cols="40" placeholder="Enter any special instructions or requirements"></textarea><br/><br/>
+        </div>
+        <div>
+            <label>Fulfillment Time:</label>
+            <input type="datetime-local" th:field="*{fulfillmentTime}" />
+            <p style="font-size: 0.9em; color: #555;">Use this to indicate when the order should be fulfilled.</p>
+        </div>
+        <div>
             <label>Name: </label>
             <input type="text" th:field="*{customerName}" required/><br/><br/>
         </div>

@@ -16,5 +16,8 @@ public class OrderDto {
     private String shippingCity;
     private String shippingPostalCode;
     private String status;
+    private String customMessage;
+    private LocalDateTime fulfillmentTime;
+    private String adminMessage;
     private LocalDateTime createdAt;
 }

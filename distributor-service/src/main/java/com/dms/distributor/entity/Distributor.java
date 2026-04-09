@@ -11,6 +11,7 @@ public class Distributor {
     private Long id;
 
     private String name;
+    private String email;
     private String city;
     private String contact;
 
@@ -18,9 +19,10 @@ public class Distributor {
     public Distributor() {
     }
 
-    public Distributor(Long id, String name, String city, String contact) {
+    public Distributor(Long id, String name, String email, String city, String contact) {
         this.id = id;
         this.name = name;
+        this.email = email;
         this.city = city;
         this.contact = contact;
     }
@@ -40,6 +42,14 @@ public class Distributor {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getCity() {

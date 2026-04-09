@@ -11,6 +11,19 @@
     <div th:if="${error}" style="color: red;">
         <p th:text="${error}"></p>
     </div>
+    <div>
+        <form th:action="@{/users/admin/orders}" method="get">
+            <label for="distributorId">Filter by distributor:</label>
+            <select name="distributorId" id="distributorId">
+                <option value="" th:selected="${selectedDistributorId == null}">All Distributors</option>
+                <option th:each="d : ${distributors}"
+                        th:value="${d.userId}"
+                        th:text="${d.name + ' (' + d.username + ')'}"
+                        th:selected="${d.userId == selectedDistributorId}"></option>
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+    </div>
     <div th:if="${orders}">
         <table border="1">
             <thead>
@@ -20,6 +33,9 @@
                     <th>Distributor ID</th>
                     <th>Quantity</th>
                     <th>Status</th>
+                    <th>Fulfillment Time</th>
+                    <th>Customer Message</th>
+                    <th>Admin Response</th>
                     <th>Created</th>
                     <th>Action</th>
                 </tr>
@@ -31,14 +47,26 @@
                     <td th:text="${o.distributorId}"></td>
                     <td th:text="${o.quantity}"></td>
                     <td th:text="${o.status}"></td>
+                    <td th:text="${o.fulfillmentTime}"></td>
+                    <td th:text="${o.customMessage}"></td>
+                    <td th:text="${o.adminMessage}"></td>
                     <td th:text="${o.createdAt}"></td>
                     <td>
-                        <form th:action="@{/users/admin/orders/{id}/approve(id=${o.id})}" method="post" th:if="${o.status} == 'PENDING_APPROVAL'">
-                            <button type="submit">Approve</button>
-                        </form>
-                        <form th:action="@{/users/admin/orders/{id}/delete(id=${o.id})}" method="post" style="display: inline-block; margin-left: 4px;">
-                            <button type="submit">Delete</button>
-                        </form>
+                        <div th:if="${o.status == 'PENDING_APPROVAL'}">
+                            <form th:action="@{/users/admin/orders/{id}/approve(id=${o.id})}" method="post">
+                                <textarea name="adminMessage" rows="2" cols="20" placeholder="Response message"></textarea><br/>
+                                <button type="submit">Approve</button>
+                            </form>
+                            <form th:action="@{/users/admin/orders/{id}/deny(id=${o.id})}" method="post" style="margin-top: 4px;">
+                                <textarea name="adminMessage" rows="2" cols="20" placeholder="Response message"></textarea><br/>
+                                <button type="submit">Deny</button>
+                            </form>
+                        </div>
+                        <div th:if="${o.status != 'PENDING_APPROVAL'}">
+                            <form th:action="@{/users/admin/orders/{id}/delete(id=${o.id})}" method="post">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             </tbody>

@@ -11,22 +11,28 @@
     <table border="1">
         <thead>
             <tr>
-                <th>ID</th>
+                <th>User ID</th>
                 <th>Username</th>
+                <th>Name</th>
                 <th>Email</th>
-                <th>Full Name</th>
+                <th>City</th>
+                <th>Contact</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="d : ${distributors}">
-                <td th:text="${d.id}"></td>
+                <td th:text="${d.userId}"></td>
                 <td th:text="${d.username}"></td>
+                <td th:text="${d.name}"></td>
                 <td th:text="${d.email}"></td>
-                <td th:text="${d.fullName}"></td>
+                <td th:text="${d.city}"></td>
+                <td th:text="${d.contact}"></td>
                 <td>
-                    <a th:href="@{/users/{id}(id=${d.id})}">View</a> |
-                    <form th:action="@{/users/{id}/delete(id=${d.id})}" method="post" style="display:inline;">
+                    <a th:href="@{/users/{id}(id=${d.userId})}">View</a> |
+                    <a th:href="@{/users/admin/distributors/{id}/edit(id=${d.userId})}">Edit</a> |
+                    <a th:href="@{/users/admin/orders(distributorId=${d.userId})}">Orders</a> |
+                    <form th:action="@{/users/{id}/delete(id=${d.userId})}" method="post" style="display:inline;">
                         <button type="submit" onclick="return confirm('Delete this distributor?')">Delete</button>
                     </form>
                 </td>
@@ -38,7 +44,7 @@
         <a href="/users/admin/products">Manage Products</a> |
         <a href="/users/admin/orders">View Orders</a> |
         <a href="/users/admin/audit">Audit Logs</a> |
-        <a href="/users/change-password">Change Password</a> |
+        <a href="/users/admin/profile">Edit Profile</a> |
         <a href="/users/logout">Logout</a>
     </p>
 </body>

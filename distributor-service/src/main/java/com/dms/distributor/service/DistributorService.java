@@ -35,6 +35,7 @@ public class DistributorService {
 
         if (existingDistributor != null) {
             existingDistributor.setName(updatedDistributor.getName());
+            existingDistributor.setEmail(updatedDistributor.getEmail());
             existingDistributor.setCity(updatedDistributor.getCity());
             existingDistributor.setContact(updatedDistributor.getContact());
 

@@ -77,7 +77,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderEntity updateStatus(Long id, String status) {
+    public OrderEntity updateStatus(Long id, String status, String adminMessage) {
         OrderEntity order = getById(id);
         boolean wasApproved = "APPROVED".equalsIgnoreCase(order.getStatus());
         boolean willApprove = "APPROVED".equalsIgnoreCase(status);
@@ -113,6 +113,9 @@ public class OrderService {
         }
 
         order.setStatus(status);
+        if (adminMessage != null) {
+            order.setAdminMessage(adminMessage);
+        }
         OrderEntity saved = orderRepository.save(order);
         auditClient.logEvent(new AuditEventDto(
                 null,
@@ -120,7 +123,7 @@ public class OrderService {
                 String.valueOf(order.getDistributorId()),
                 "ORDER",
                 String.valueOf(saved.getId()),
-                "Order status updated to " + status,
+                "Order status updated to " + status + (adminMessage != null && !adminMessage.isBlank() ? " by admin: " + adminMessage : ""),
                 LocalDateTime.now()
         ));
         return saved;

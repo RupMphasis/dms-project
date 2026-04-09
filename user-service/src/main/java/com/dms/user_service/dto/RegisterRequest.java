@@ -21,9 +21,15 @@ public class RegisterRequest {
     @NotNull(message = "Role is required — must be ADMIN or DISTRIBUTOR")
     private User.Role role;
 
-    @NotBlank(message = "Full name is required")
     private String fullName;
 
-    @Email(message = "Please provide a valid email address")
     private String email;
+
+    private String distributorName;
+
+    @Email(message = "Please provide a valid distributor email address")
+    private String distributorEmail;
+
+    private String distributorCity;
+    private String distributorContact;
 }

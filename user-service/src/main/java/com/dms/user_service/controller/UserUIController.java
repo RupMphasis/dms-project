@@ -109,8 +109,69 @@ public class UserUIController {
     @PreAuthorize("hasRole('ADMIN')")
     public String adminDashboard(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         model.addAttribute("currentUser", currentUser);
-        model.addAttribute("distributors", userService.getDistributors());
+        model.addAttribute("distributors", userService.getDistributorViews());
         return "admin-dashboard";
+    }
+
+    @GetMapping("/admin/profile")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminProfileForm(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                   Model model,
+                                   @ModelAttribute("message") String message,
+                                   @ModelAttribute("error") String error) {
+        User user = userService.getUserById(currentUser.getId());
+        UserProfileDto profile = new UserProfileDto();
+        profile.setUsername(user.getUsername());
+        profile.setFullName(user.getFullName());
+        profile.setEmail(user.getEmail());
+        model.addAttribute("profile", profile);
+        model.addAttribute("message", message);
+        model.addAttribute("error", error);
+        return "admin-profile";
+    }
+
+    @PostMapping("/admin/profile")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminProfileSubmit(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                     @ModelAttribute UserProfileDto profile,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateUserProfile(currentUser.getId(), profile);
+            redirectAttributes.addFlashAttribute("message", "Profile updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/users/admin/profile";
+    }
+
+    @GetMapping("/admin/distributors/{id}/edit")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String editDistributorForm(@PathVariable Long id, Model model) {
+        DistributorViewDto distributor = userService.getDistributorViewByUserId(id);
+        DistributorUpdateDto dto = new DistributorUpdateDto();
+        dto.setDistributorId(distributor.getDistributorId());
+        dto.setName(distributor.getName());
+        dto.setEmail(distributor.getEmail());
+        dto.setCity(distributor.getCity());
+        dto.setContact(distributor.getContact());
+        model.addAttribute("distributor", dto);
+        model.addAttribute("username", distributor.getUsername());
+        model.addAttribute("distributorUserId", distributor.getUserId());
+        return "admin-edit-distributor";
+    }
+
+    @PostMapping("/admin/distributors/{id}/edit")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String editDistributorSubmit(@PathVariable Long id,
+                                        @ModelAttribute DistributorUpdateDto distributor,
+                                        RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateDistributorDetails(id, distributor);
+            redirectAttributes.addFlashAttribute("message", "Distributor updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/users/admin/distributors/" + id + "/edit";
     }
 
     @GetMapping("/admin/products")
@@ -180,9 +241,21 @@ public class UserUIController {
 
     @GetMapping("/admin/orders")
     @PreAuthorize("hasRole('ADMIN')")
-    public String adminOrderList(Model model) {
-        OrderDto[] orders = restTemplate.getForObject(orderServiceUrl + "/api/orders", OrderDto[].class);
-        model.addAttribute("orders", Arrays.asList(orders));
+    public String adminOrderList(@RequestParam(value = "distributorId", required = false) Long distributorId,
+                                 Model model,
+                                 @ModelAttribute("message") String message,
+                                 @ModelAttribute("error") String error) {
+        OrderDto[] orders;
+        if (distributorId != null) {
+            orders = restTemplate.getForObject(orderServiceUrl + "/api/orders/distributor/" + distributorId, OrderDto[].class);
+            model.addAttribute("selectedDistributorId", distributorId);
+        } else {
+            orders = restTemplate.getForObject(orderServiceUrl + "/api/orders", OrderDto[].class);
+        }
+        model.addAttribute("orders", orders != null ? Arrays.asList(orders) : new ArrayList<>());
+        model.addAttribute("distributors", userService.getDistributorViews());
+        model.addAttribute("message", message);
+        model.addAttribute("error", error);
         return "admin-orders";
     }
 
@@ -204,8 +277,43 @@ public class UserUIController {
     @GetMapping("/distributor/dashboard")
     @PreAuthorize("hasRole('DISTRIBUTOR')")
     public String distributorDashboard(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        model.addAttribute("currentUser", currentUser);
+        DistributorViewDto distributor = userService.getDistributorViewByUserId(currentUser.getId());
+        model.addAttribute("distributor", distributor);
         return "distributor-dashboard";
+    }
+
+    @GetMapping("/distributor/profile")
+    @PreAuthorize("hasRole('DISTRIBUTOR')")
+    public String distributorProfileForm(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                         Model model,
+                                         @ModelAttribute("message") String message,
+                                         @ModelAttribute("error") String error) {
+        DistributorViewDto distributor = userService.getDistributorViewByUserId(currentUser.getId());
+        DistributorProfileDto profile = new DistributorProfileDto();
+        profile.setDistributorId(distributor.getDistributorId());
+        profile.setUsername(distributor.getUsername());
+        profile.setName(distributor.getName());
+        profile.setEmail(distributor.getEmail());
+        profile.setCity(distributor.getCity());
+        profile.setContact(distributor.getContact());
+        model.addAttribute("profile", profile);
+        model.addAttribute("message", message);
+        model.addAttribute("error", error);
+        return "distributor-profile";
+    }
+
+    @PostMapping("/distributor/profile")
+    @PreAuthorize("hasRole('DISTRIBUTOR')")
+    public String distributorProfileSubmit(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                           @ModelAttribute DistributorProfileDto profile,
+                                           RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateDistributorProfile(currentUser.getId(), profile);
+            redirectAttributes.addFlashAttribute("message", "Profile updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/users/distributor/profile";
     }
 
     @GetMapping("/distributor/products")
@@ -470,12 +578,33 @@ public class UserUIController {
     @PostMapping("/admin/orders/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public String approveAdminOrder(@PathVariable Long id,
+                                    @RequestParam(value = "adminMessage", required = false) String adminMessage,
                                     RedirectAttributes redirectAttributes) {
         try {
-            restTemplate.patchForObject(orderServiceUrl + "/api/orders/" + id + "/status?status=APPROVED", null, OrderDto.class);
+            OrderDecisionDto decision = new OrderDecisionDto();
+            decision.setStatus("APPROVED");
+            decision.setAdminMessage(adminMessage);
+            restTemplate.postForObject(orderServiceUrl + "/api/orders/" + id + "/decision", decision, OrderDto.class);
             redirectAttributes.addFlashAttribute("message", "Order approved successfully.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Unable to approve order: " + e.getMessage());
+        }
+        return "redirect:/users/admin/orders";
+    }
+
+    @PostMapping("/admin/orders/{id}/deny")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String denyAdminOrder(@PathVariable Long id,
+                                 @RequestParam(value = "adminMessage", required = false) String adminMessage,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            OrderDecisionDto decision = new OrderDecisionDto();
+            decision.setStatus("DENIED");
+            decision.setAdminMessage(adminMessage);
+            restTemplate.postForObject(orderServiceUrl + "/api/orders/" + id + "/decision", decision, OrderDto.class);
+            redirectAttributes.addFlashAttribute("message", "Order denied successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Unable to deny order: " + e.getMessage());
         }
         return "redirect:/users/admin/orders";
     }

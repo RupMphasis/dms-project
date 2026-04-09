@@ -32,6 +32,9 @@ public class User {
     @Column(name = "email", length = 150)
     private String email;
 
+    @Column(name = "distributor_id")
+    private Long distributorId;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
