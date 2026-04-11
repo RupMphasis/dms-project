@@ -1,5 +1,6 @@
 package com.dms.user_service.security;
 
+import com.dms.user_service.entity.ApprovalStatus;
 import com.dms.user_service.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -43,6 +44,10 @@ public class CustomUserDetails implements UserDetails {
         return user.getUsername();
     }
 
+    public User.Role getRole() {
+        return user.getRole();
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -60,6 +65,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return user.getRole() != User.Role.DISTRIBUTOR || user.getApprovalStatus() == ApprovalStatus.APPROVED;
     }
 }

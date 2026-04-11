@@ -12,72 +12,32 @@
         <p th:text="${message}"></p>
     </div>
     <form action="#" th:action="@{/users/register}" th:object="${registerRequest}" method="post">
+        <input type="hidden" th:field="*{role}" value="DISTRIBUTOR"/>
         <label for="username">Username:</label>
         <input type="text" id="username" th:field="*{username}" required><br><br>
-        <label for="role">Role:</label>
-        <select id="role" th:field="*{role}" required>
-            <option value="">Select Role</option>
-            <option value="ADMIN">Admin</option>
-            <option value="DISTRIBUTOR">Distributor</option>
-        </select><br><br>
 
-        <div id="admin-fields" style="display: none; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
-            <h3>Admin Details</h3>
-            <label for="fullName">Full Name:</label>
-            <input type="text" id="fullName" th:field="*{fullName}"><br><br>
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" th:field="*{email}"><br><br>
-        </div>
-
-        <div id="distributor-fields" style="display: none; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
             <h3>Distributor Details</h3>
             <label for="distributorName">Distributor Name:</label>
-            <input type="text" id="distributorName" th:field="*{distributorName}"><br><br>
+            <input type="text" id="distributorName" th:field="*{distributorName}" required><br><br>
 
             <label for="distributorEmail">Distributor Email:</label>
-            <input type="email" id="distributorEmail" th:field="*{distributorEmail}"><br><br>
+            <input type="email" id="distributorEmail" th:field="*{distributorEmail}" required><br><br>
 
             <label for="distributorCity">City:</label>
-            <input type="text" id="distributorCity" th:field="*{distributorCity}"><br><br>
+            <input type="text" id="distributorCity" th:field="*{distributorCity}" required><br><br>
 
             <label for="distributorContact">Contact:</label>
-            <input type="text" id="distributorContact" th:field="*{distributorContact}"><br><br>
+            <input type="text" id="distributorContact" th:field="*{distributorContact}" required><br><br>
         </div>
 
         <label for="password">Password:</label>
         <input type="password" id="password" th:field="*{password}" required><br><br>
         <label for="confirmPassword">Confirm Password:</label>
         <input type="password" id="confirmPassword" th:field="*{confirmPassword}" required><br><br>
-        <button type="submit">Register</button>
+        <button type="submit">Register as Distributor</button>
     </form>
     <p><a href="/users/login">Login</a></p>
 
-    <script>
-        function toggleRegisterFields() {
-            var role = document.getElementById('role');
-            var adminSection = document.getElementById('admin-fields');
-            var distributorSection = document.getElementById('distributor-fields');
-            if (!role || !adminSection || !distributorSection) return;
-            if (role.value === 'ADMIN') {
-                adminSection.style.display = 'block';
-                distributorSection.style.display = 'none';
-            } else if (role.value === 'DISTRIBUTOR') {
-                adminSection.style.display = 'none';
-                distributorSection.style.display = 'block';
-            } else {
-                adminSection.style.display = 'none';
-                distributorSection.style.display = 'none';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var role = document.getElementById('role');
-            if (role) {
-                role.addEventListener('change', toggleRegisterFields);
-                toggleRegisterFields();
-            }
-        });
-    </script>
 </body>
 </html>

@@ -6,8 +6,14 @@
 <body>
     <h1>Admin Dashboard</h1>
     <p>Welcome, <span th:text="${currentUser.fullName}">Admin</span> (<span th:text="${currentUser.username}"></span>)</p>
+    <div th:if="${message}">
+        <p style="color: green;" th:text="${message}"></p>
+    </div>
+    <div th:if="${error}">
+        <p style="color: red;" th:text="${error}"></p>
+    </div>
 
-    <h2>Managed Distributors</h2>
+    <h2>Pending Distributor Approvals</h2>
     <table border="1">
         <thead>
             <tr>
@@ -21,6 +27,43 @@
             </tr>
         </thead>
         <tbody>
+            <tr th:each="d : ${pendingDistributors}">
+                <td th:text="${d.userId}"></td>
+                <td th:text="${d.username}"></td>
+                <td th:text="${d.name}"></td>
+                <td th:text="${d.email}"></td>
+                <td th:text="${d.city}"></td>
+                <td th:text="${d.contact}"></td>
+                <td>
+                    <form th:action="@{/users/admin/distributors/{id}/approve(id=${d.userId})}" method="post" style="display:inline; margin-right:3px;">
+                        <button type="submit">Approve</button>
+                    </form>
+                    <form th:action="@{/users/admin/distributors/{id}/deny(id=${d.userId})}" method="post" style="display:inline;">
+                        <button type="submit">Deny</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${pendingDistributors.empty}">
+                <td colspan="7">No pending distributor approvals.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Managed Distributors</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>City</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
             <tr th:each="d : ${distributors}">
                 <td th:text="${d.userId}"></td>
                 <td th:text="${d.username}"></td>
@@ -28,6 +71,7 @@
                 <td th:text="${d.email}"></td>
                 <td th:text="${d.city}"></td>
                 <td th:text="${d.contact}"></td>
+                <td th:text="${d.status}"></td>
                 <td>
                     <a th:href="@{/users/{id}(id=${d.userId})}">View</a> |
                     <a th:href="@{/users/admin/distributors/{id}/edit(id=${d.userId})}">Edit</a> |
@@ -41,6 +85,7 @@
     </table>
 
     <p>
+        <a href="/users/admin/add-admin">Add Admin</a> |
         <a href="/users/admin/products">Manage Products</a> |
         <a href="/users/admin/orders">View Orders</a> |
         <a href="/users/admin/audit">Audit Logs</a> |

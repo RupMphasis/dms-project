@@ -14,12 +14,18 @@
 
 ## Technology Stack
 
-- Java + Spring Boot
-- Spring Data JPA for persistence
+- Java 17 + Spring Boot
 - Spring Web for REST APIs
+- Spring Data JPA with Hibernate for persistence
+- Spring Security for endpoint protection
+- JSON Web Tokens (JJWT) for authentication
+- Spring Actuator for monitoring
+- Spring Cloud Eureka client for service registration/discovery
+- Springdoc OpenAPI for Swagger documentation
+- Lombok for boilerplate reduction
+- MySQL Connector/J for database connectivity
 - Jakarta Persistence for entity mapping
 - Spring Transaction management
-- Lombok for boilerplate reduction
 
 ---
 

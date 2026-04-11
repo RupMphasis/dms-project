@@ -1,11 +1,17 @@
 package com.dms.user_service.controller;
 
-import com.dms.user_service.dto.*;
+import com.dms.user_service.dto.AdminRegisterRequest;
+import com.dms.user_service.dto.DistributorRegisterRequest;
+import com.dms.user_service.dto.LoginRequest;
+import com.dms.user_service.dto.LoginResponse;
+import com.dms.user_service.dto.UserUpdateRequest;
 import com.dms.user_service.entity.User;
 import com.dms.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -22,33 +28,59 @@ public class UserController {
         return ResponseEntity.ok(userService.login(request));
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout() {
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
-    }
-
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(userService.registerUser(request));
+    public ResponseEntity<User> registerDistributor(@Valid @RequestBody DistributorRegisterRequest request) {
+        return ResponseEntity.ok(userService.registerDistributor(request));
     }
 
-    @PutMapping("/change-password")
-    public ResponseEntity<Map<String, String>> changePassword(
-            @Valid @RequestBody ChangePasswordRequest request) {
-        return ResponseEntity.ok(Map.of("message", userService.changePassword(request)));
+    @PostMapping("/admin/register")
+    public ResponseEntity<User> registerAdmin(@Valid @RequestBody AdminRegisterRequest request,
+                                              Authentication authentication) {
+        if (userService.hasAdmin()) {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+            boolean hasAdminRole = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+            if (!hasAdminRole) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+        return ResponseEntity.ok(userService.registerAdmin(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<User>> getUsers(@RequestParam(value = "role", required = false) String role) {
+        return ResponseEntity.ok(userService.getUsers(role));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == principal.id")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == principal.id")
+    public ResponseEntity<User> updateUser(@PathVariable Long id,
+                                           @Valid @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
+    @PutMapping("/distributors/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> approveDistributor(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.approveDistributor(id));
+    }
+
+    @PutMapping("/distributors/{id}/deny")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> denyDistributor(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.denyDistributor(id));
+    }
+
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
         return ResponseEntity.ok(Map.of("message", userService.deleteUser(id)));
     }

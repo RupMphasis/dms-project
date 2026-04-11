@@ -39,20 +39,17 @@ public class ProductService {
         return product;
     }
 
-    public Integer getCurrentStock(Long productId) {
-        return inventoryClient.getStock(productId);
-    }
-
     @Transactional
     public Product create(Product product) {
         if (product.getActive() == null) {
             product.setActive(true);
         }
         Integer requestedStock = product.getStock();
-        product.setStock(0);
         Product saved = productRepository.save(product);
         try {
-            inventoryClient.setStock(saved.getId(), requestedStock, "DEFAULT");
+            if (requestedStock != null) {
+                inventoryClient.setStock(saved.getId(), requestedStock, "DEFAULT");
+            }
             saved.setStock(requestedStock != null ? requestedStock : 0);
         } catch (RuntimeException ex) {
             throw new RuntimeException("Product created but failed to update inventory: " + ex.getMessage(), ex);
@@ -76,12 +73,12 @@ public class ProductService {
         existing.setDescription(incoming.getDescription());
         existing.setPrice(incoming.getPrice());
         existing.setActive(incoming.getActive());
+        Product saved = productRepository.save(existing);
         Integer requestedStock = incoming.getStock();
         if (requestedStock != null) {
-            inventoryClient.setStock(existing.getId(), requestedStock, "DEFAULT");
-            existing.setStock(requestedStock);
+            inventoryClient.setStock(saved.getId(), requestedStock, "DEFAULT");
+            saved.setStock(requestedStock);
         }
-        Product saved = productRepository.save(existing);
         auditClient.logEvent(new AuditEventDto(
                 null,
                 "PRODUCT_UPDATED",
@@ -91,7 +88,6 @@ public class ProductService {
                 "Product updated: " + saved.getName(),
                 LocalDateTime.now()
         ));
-        populateStockFromInventory(saved);
         return saved;
     }
 
@@ -118,3 +114,4 @@ public class ProductService {
         }
     }
 }
+

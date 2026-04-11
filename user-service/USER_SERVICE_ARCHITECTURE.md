@@ -8,6 +8,7 @@
 - Handles user registration and login
 - Manages user profiles
 - Supports two roles: `ADMIN` and `DISTRIBUTOR`
+- Supports distributor approval workflow with `PENDING`, `APPROVED`, and `DENIED` states
 - Provides both REST API endpoints and server-rendered UI pages
 - Integrates with other microservices for distributor creation and audit logging
 
@@ -16,14 +17,13 @@
 ## Technology Stack
 
 - Java + Spring Boot
-- Spring Data JPA for persistence
-- Spring Security for authentication
+- Spring Web for REST controllers and MVC
+- Spring Data JPA with Hibernate for persistence
+- Spring Security for authentication and authorization
 - BCrypt for password hashing
-- Thymeleaf templates for UI pages
+- Thymeleaf templates for server-rendered UI pages
 - `RestTemplate` for HTTP communication with other microservices
-- Lombok for reducing boilerplate
-- Jakarta Validation for request validation
-
+- JSON Web Tokens (JJWT) for JWT generation and validation
 ---
 
 ## Directory and Component Flow
@@ -37,13 +37,16 @@ This is the main Java package for `user-service`.
   - Handles:
     - `POST /api/users/login`
     - `POST /api/users/register`
-    - `PUT /api/users/change-password`
+    - `POST /api/users/admin/register`
     - `GET /api/users`
     - `GET /api/users/{id}`
+    - `PUT /api/users/{id}`
+    - `PUT /api/users/distributors/{id}/approve`
+    - `PUT /api/users/distributors/{id}/deny`
     - `DELETE /api/users/{id}`
 - `UserUIController.java`
   - UI routes under `/users`
-  - Handles web pages for login, registration, dashboards, profile editing, and redirects
+  - Handles web pages and server-side navigation
   - Uses Thymeleaf templates from `src/main/resources/templates`
 
 #### `service/`
@@ -55,6 +58,10 @@ This is the main Java package for `user-service`.
   - Calls external services:
     - `distributor-service` for distributor creation
     - `audit-service` via `AuditClient` for event logging
+  - Supports role-specific registration logic:
+    - distributor registration with pending approval
+    - admin registration with immediate approval
+  - Supports distributor approval/deny workflow
   - Handles profile updates, password changes, and user lookup
 
 #### `repository/`
@@ -65,6 +72,7 @@ This is the main Java package for `user-service`.
     - `existsByUsername(...)`
     - `existsByEmail(...)`
     - `findByRole(...)`
+    - `findByRoleAndApprovalStatus(...)`
 
 #### `entity/`
 - `User.java`
@@ -77,17 +85,23 @@ This is the main Java package for `user-service`.
     - `fullName`
     - `email`
     - `distributorId`
+    - `approvalStatus` (`PENDING`, `APPROVED`, `DENIED`)
     - `createdAt`
   - Uses `@PrePersist` to automatically set creation time
+- `ApprovalStatusConverter.java`
+  - Converts `ApprovalStatus` enum values to numeric database values
+  - Uses `@Converter(autoApply = true)` to store approval status as an integer column
 
 #### `dto/`
 - Data transfer objects used by controllers and service methods
 - Examples:
   - `LoginRequest`, `LoginResponse`
   - `RegisterRequest`
+  - `AdminRegisterRequest`, `DistributorRegisterRequest`
   - `ChangePasswordRequest`
   - `UserProfileDto`
   - `DistributorDto`
+  - `DistributorViewDto`
   - `AuditEventDto`
 
 #### `config/`
@@ -95,6 +109,10 @@ This is the main Java package for `user-service`.
   - Configures Spring Security
   - Defines form login, logout, public paths, and authentication rules
   - Registers `DaoAuthenticationProvider` with `CustomUserDetailsService`
+  - Generates JWT tokens for UI login and stores them in a cookie
+- `OpenApiConfig.java`
+  - Configures Springdoc/OpenAPI
+  - Adds bearer JWT auth support to Swagger UI
 - `RestTemplateConfig.java`
   - Creates the `RestTemplate` bean used for inter-service HTTP calls
 
@@ -103,6 +121,14 @@ This is the main Java package for `user-service`.
   - Loads user details from the database for Spring Security authentication
 - `CustomUserDetails.java`
   - Wraps the `User` entity into Spring Security `UserDetails`
+  - Applies distributor approval status checks so only approved distributors are enabled
+- `JwtUtils.java`
+  - Generates and validates JWT tokens
+  - Includes role claims in tokens
+- `JwtAuthenticationFilter.java`
+  - Extracts bearer JWTs from requests and populates Spring Security context
+- `JwtAuthenticationEntryPoint.java`
+  - Handles unauthorized access responses
 
 ---
 
@@ -127,7 +153,8 @@ This is the main Java package for `user-service`.
 4. `UserService`:
    - checks for duplicate username/email
    - encodes the password
-   - if role is `DISTRIBUTOR`, calls `distributor-service` to create distributor details
+   - if role is `DISTRIBUTOR`, calls `distributor-service` to create distributor details and saves the user in pending approval status
+   - if role is `ADMIN`, creates an approved admin account
    - saves the `User` entity with `UserRepository`
    - logs the event via `AuditClient`
 5. Returns success response to the UI or API caller
@@ -137,9 +164,10 @@ This is the main Java package for `user-service`.
 2. `UserService.login()`:
    - fetches user by username
    - verifies password with BCrypt
+   - rejects distributor logins unless approval status is `APPROVED`
    - logs the login event
-   - builds a `LoginResponse`
-3. If UI login, Spring Security creates the session and redirects as needed
+   - builds a `LoginResponse` containing a JWT token
+3. If UI login, Spring Security creates the session, issues a JWT cookie, and redirects as needed
 
 ### Data Persistence
 - `UserRepository` persists `User` entities to the `users` table

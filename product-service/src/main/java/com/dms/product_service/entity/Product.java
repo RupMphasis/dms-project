@@ -1,5 +1,6 @@
 package com.dms.product_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Product {
 
     @Id
@@ -33,7 +35,7 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
-    @Column(nullable = false)
+    @Transient
     private Integer stock;
 
     @Column(nullable = false)

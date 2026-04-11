@@ -58,9 +58,11 @@ public class UserUIController {
             model.addAttribute("error", "Passwords do not match");
             return "register";
         }
+        request.setRole(User.Role.DISTRIBUTOR);
         try {
             userService.registerUser(request);
-            redirectAttributes.addFlashAttribute("message", "Registration successful");
+            String message = "Registration successful. Your distributor account is pending approval by an administrator.";
+            redirectAttributes.addFlashAttribute("message", message);
             return "redirect:/users/login";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
@@ -110,7 +112,32 @@ public class UserUIController {
     public String adminDashboard(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("distributors", userService.getDistributorViews());
+        model.addAttribute("pendingDistributors", userService.getPendingDistributorViews());
         return "admin-dashboard";
+    }
+
+    @PostMapping("/admin/distributors/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String approveDistributor(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.approveDistributor(id);
+            redirectAttributes.addFlashAttribute("message", "Distributor account approved successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/users/admin/dashboard";
+    }
+
+    @PostMapping("/admin/distributors/{id}/deny")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String denyDistributor(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.denyDistributor(id);
+            redirectAttributes.addFlashAttribute("message", "Distributor account denied and removed successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/users/admin/dashboard";
     }
 
     @GetMapping("/admin/profile")
@@ -128,6 +155,33 @@ public class UserUIController {
         model.addAttribute("message", message);
         model.addAttribute("error", error);
         return "admin-profile";
+    }
+
+    @GetMapping("/admin/add-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminAddForm(Model model) {
+        model.addAttribute("registerRequest", new RegisterRequest());
+        return "admin-add-admin";
+    }
+
+    @PostMapping("/admin/add-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminAddSubmit(@Valid @ModelAttribute RegisterRequest request,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            model.addAttribute("error", "Passwords do not match");
+            return "admin-add-admin";
+        }
+        try {
+            request.setRole(User.Role.ADMIN);
+            userService.registerUser(request);
+            redirectAttributes.addFlashAttribute("message", "Admin user created successfully.");
+            return "redirect:/users/admin/dashboard";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "admin-add-admin";
+        }
     }
 
     @PostMapping("/admin/profile")
@@ -654,9 +708,14 @@ public class UserUIController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','DISTRIBUTOR')")
-    public String getUserById(@PathVariable Long id, Model model) {
+    public String getUserById(@PathVariable Long id,
+                              @AuthenticationPrincipal CustomUserDetails currentUser,
+                              Model model) {
         User user = userService.getUserById(id);
         model.addAttribute("user", user);
+        model.addAttribute("currentUser", currentUser);
+        String backUrl = currentUser.getRole() == User.Role.ADMIN ? "/users/admin/dashboard" : "/users/distributor/dashboard";
+        model.addAttribute("backUrl", backUrl);
         return "user-detail";
     }
 

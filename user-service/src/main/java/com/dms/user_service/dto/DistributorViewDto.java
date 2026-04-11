@@ -15,4 +15,5 @@ public class DistributorViewDto {
     private String email;
     private String city;
     private String contact;
+    private String status;
 }

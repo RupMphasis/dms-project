@@ -15,11 +15,16 @@
 
 ## Technology Stack
 
-- Java + Spring Boot
-- Spring Data JPA for persistence
+- Java 17 + Spring Boot
 - Spring Web for REST endpoints
-- Spring Transaction management
+- Spring Data JPA with Hibernate for persistence
+- Spring Security for endpoint protection
+- JSON Web Tokens (JJWT) for authentication
+- Spring Actuator for monitoring
+- Spring Cloud Eureka client for service registration/discovery
+- Springdoc OpenAPI for Swagger documentation
 - Lombok for boilerplate reduction
+- MySQL Connector/J for database connectivity
 - Jakarta Persistence for entity mapping
 - `RestTemplate`-based clients for service calls (inventory + audit)
 
@@ -73,7 +78,7 @@ This is the main Java package of `product-service`.
     - `size`
     - `description`
     - `price`
-    - `stock`
+    - `stock` — transient field populated from inventory-service; not stored in the product table
     - `active`
   - Uses Lombok annotations for getters, setters, constructors, and builder.
 

@@ -18,7 +18,6 @@ public class RegisterRequest {
     @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
 
-    @NotNull(message = "Role is required — must be ADMIN or DISTRIBUTOR")
     private User.Role role;
 
     private String fullName;

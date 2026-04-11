@@ -1,6 +1,10 @@
 package com.dms.user_service.config;
 
 import com.dms.user_service.security.CustomUserDetailsService;
+import com.dms.user_service.security.JwtAuthenticationEntryPoint;
+import com.dms.user_service.security.JwtAuthenticationFilter;
+import com.dms.user_service.security.JwtUtils;
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +16,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -20,19 +25,22 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtUtils jwtUtils;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/users/login",
                                 "/users/register",
                                 "/api/users/register",
+                                "/api/users/admin/register",
                                 "/api/users/login",
-                                "/api/users/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -46,19 +54,35 @@ public class SecurityConfig {
                                 "/images/**"
                         ).permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .formLogin(form -> form
                         .loginPage("/users/login")
                         .loginProcessingUrl("/users/login")
-                        .defaultSuccessUrl("/users", true)
+                        .successHandler((request, response, authentication) -> {
+                            String role = authentication.getAuthorities().stream()
+                                    .map(Object::toString)
+                                    .filter(auth -> auth.startsWith("ROLE_"))
+                                    .map(auth -> auth.substring("ROLE_".length()))
+                                    .findFirst()
+                                    .orElse("DISTRIBUTOR");
+                            String token = jwtUtils.generateToken(authentication.getName(), role);
+                            Cookie cookie = new Cookie("JWT", token);
+                            cookie.setHttpOnly(true);
+                            cookie.setPath("/");
+                            cookie.setMaxAge((int) (jwtUtils.getJwtExpirationMs() / 1000));
+                            response.addCookie(cookie);
+                            response.sendRedirect("/users");
+                        })
                         .failureUrl("/users/login?error=true")
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/users/logout")
                         .logoutSuccessUrl("/users/login?logout=true")
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
+                        .deleteCookies("JSESSIONID", "JWT")
                         .permitAll())
-                .authenticationProvider(authenticationProvider());
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
