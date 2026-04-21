@@ -89,7 +89,15 @@ public class ProductClient {
         public void setStock(Integer stock) {
             this.stock = stock;
         }
+        private Integer productionCapacityPerDay;
 
+        public Integer getProductionCapacityPerDay() {
+            return productionCapacityPerDay;
+        }
+
+        public void setProductionCapacityPerDay(Integer productionCapacityPerDay) {
+            this.productionCapacityPerDay = productionCapacityPerDay;
+        }
         public Boolean getActive() {
             return active;
         }

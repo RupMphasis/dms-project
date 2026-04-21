@@ -101,6 +101,51 @@ public class OrderEntity {
         orderDetails.setAdminMessage(adminMessage);
     }
 
+    @Transient
+    public Integer getFulfilledQuantity() {
+        return orderDetails != null ? orderDetails.getFulfilledQuantity() : null;
+    }
+
+    public void setFulfilledQuantity(Integer fulfilledQuantity) {
+        if (fulfilledQuantity == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setFulfilledQuantity(fulfilledQuantity);
+    }
+
+    @Transient
+    public Integer getPendingQuantity() {
+        return orderDetails != null ? orderDetails.getPendingQuantity() : null;
+    }
+
+    public void setPendingQuantity(Integer pendingQuantity) {
+        if (pendingQuantity == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setPendingQuantity(pendingQuantity);
+    }
+
+    @Transient
+    public Integer getEstimatedFulfillmentDays() {
+        return orderDetails != null ? orderDetails.getEstimatedFulfillmentDays() : null;
+    }
+
+    public void setEstimatedFulfillmentDays(Integer estimatedFulfillmentDays) {
+        if (estimatedFulfillmentDays == null) {
+            return;
+        }
+        if (orderDetails == null) {
+            orderDetails = new OrderDetails();
+        }
+        orderDetails.setEstimatedFulfillmentDays(estimatedFulfillmentDays);
+    }
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

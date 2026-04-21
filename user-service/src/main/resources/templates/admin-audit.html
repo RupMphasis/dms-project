@@ -18,8 +18,28 @@
         <a th:href="@{/users/admin/audit(targetType='PRODUCT')}">Products</a> |
         <a th:href="@{/users/admin/audit(targetType='USER')}">Users</a>
     </p>
+    <form th:action="@{/users/admin/audit}" method="get" style="margin-bottom: 1rem;">
+        <label>
+            Target Type:
+            <select name="targetType">
+                <option th:value="" th:selected="${selectedType == 'ALL'}">All</option>
+                <option th:value="USER" th:selected="${selectedType == 'USER'}">User / Distributor</option>
+                <option th:value="ORDER" th:selected="${selectedType == 'ORDER'}">Order</option>
+                <option th:value="PRODUCT" th:selected="${selectedType == 'PRODUCT'}">Product</option>
+            </select>
+        </label>
+        <label>
+            Target ID:
+            <input type="text" name="targetId" placeholder="e.g. 1 or 101" th:value="${selectedId}" />
+        </label>
+        <button type="submit">Filter</button>
+        <a th:href="@{/users/admin/audit}">Reset</a>
+    </form>
     <div th:if="${selectedType}">
         <strong th:text="'Showing ' + ${selectedType} + ' logs'"></strong>
+    </div>
+    <div th:if="${selectedId}">
+        <em th:text="'Filtered by target ID: ' + ${selectedId}"></em>
     </div>
     <table border="1">
         <thead>

@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Create Order</title>
+    <title>Place Order</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        .hidden { display: none; }
+        .inline-button { margin-left: 8px; }
+        input[type="number"] { width: 80px; }
+    </style>
 </head>
 <body>
-    <h1>Place New Order</h1>
+    <h1>Place Order</h1>
 
     <div th:if="${message}" style="color: green;">
         <p th:text="${message}"></p>
@@ -13,22 +21,51 @@
         <p th:text="${error}"></p>
     </div>
 
-    <form th:action="@{/users/distributor/order/create}" th:object="${orderCreateDto}" method="post">
+    <form th:action="@{/users/distributor/order/create}" th:object="${orderCreateDto}" method="post" id="orderForm">
         <input type="hidden" th:field="*{distributorId}" />
-        <p style="color: blue;">Orders placed here are sent for admin approval and may request quantities beyond current stock.</p>
-        <label>Product ID: </label>
-        <input type="number" th:field="*{productId}" required/><br/><br/>
-        <label>Quantity: </label>
-        <input type="number" th:field="*{quantity}" required min="1"/><br/><br/>
+        <input type="hidden" id="selectedProductId" th:value="${selectedProductId}" />
+
         <div>
-            <label>Message for Admin:</label><br/>
-            <textarea th:field="*{customMessage}" rows="4" cols="40" placeholder="Enter any special instructions or requirements"></textarea><br/><br/>
+            <label for="productSelect">Add Product:</label>
+            <select id="productSelect">
+                <option value="">-- Select product --</option>
+                <option th:each="p : ${products}"
+                        th:value="${p.id}"
+                        th:data-name="${p.name}"
+                        th:data-price="${p.price}"
+                        th:data-stock="${p.stock}"
+                        th:data-capacity="${p.productionCapacityPerDay}"
+                        th:text="${p.name + ' (' + p.vehicleType + ' - ' + p.size + ')'}"></option>
+            </select>
+            <label for="productQuantity">Qty:</label>
+            <input type="number" id="productQuantity" min="1" value="1" />
+            <button type="button" id="addProductButton" class="inline-button">Add Product</button>
         </div>
-        <div>
-            <label>Fulfillment Time:</label>
-            <input type="datetime-local" th:field="*{fulfillmentTime}" />
-            <p style="font-size: 0.9em; color: #555;">Use this to indicate when the order should be fulfilled.</p>
+        <div id="inventoryInfo" style="margin-top:10px; display:none;">
+            <p><strong>Available stock:</strong> <span id="availableStock">0</span></p>
+            <p><strong>Production capacity per day:</strong> <span id="productionCapacity">0</span></p>
         </div>
+
+        <div id="selectedProductsContainer">
+            <h2>Selected Products</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Price (Per Item)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="selectedProductsBody"></tbody>
+            </table>
+            <p id="emptyMessage">No products selected.</p>
+            <p><strong>Total quantity:</strong> <span id="totalQuantity">0</span></p>
+            <p><strong>Total price:</strong> <span id="totalPrice">0.00</span></p>
+        </div>
+
+        <div id="productInputs"></div>
         <div>
             <label>Name: </label>
             <input type="text" th:field="*{customerName}" required/><br/><br/>
@@ -49,8 +86,152 @@
             <label>Postal Code: </label>
             <input type="text" th:field="*{shippingPostalCode}" required/><br/><br/>
         </div>
-        <button type="submit">Submit Order</button>
+        <div>
+            <label>Message for Admin:</label><br/>
+            <textarea th:field="*{customMessage}" rows="4" cols="40" placeholder="Enter any special instructions or requirements"></textarea><br/><br/>
+        </div>
+        <button type="submit">Add Order</button>
     </form>
+
+    <script>
+        const productSelect = document.getElementById('productSelect');
+        const productQuantity = document.getElementById('productQuantity');
+        const selectedProductsBody = document.getElementById('selectedProductsBody');
+        const productInputs = document.getElementById('productInputs');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const totalQuantityElement = document.getElementById('totalQuantity');
+        const totalPriceElement = document.getElementById('totalPrice');
+        const inventoryInfo = document.getElementById('inventoryInfo');
+        const availableStockElement = document.getElementById('availableStock');
+        const productionCapacityElement = document.getElementById('productionCapacity');
+        const selectedProductId = document.getElementById('selectedProductId').value;
+
+        const selectedItems = [];
+
+        function formatPrice(value) {
+            return Number(value).toFixed(2);
+        }
+
+        function getOptionData(productId) {
+            const option = Array.from(productSelect.options).find(opt => opt.value === String(productId));
+            if (!option) {
+                return null;
+            }
+            return {
+                id: option.value,
+                name: option.dataset.name,
+                price: parseFloat(option.dataset.price || 0),
+                stock: parseInt(option.dataset.stock || 0, 10),
+                productionCapacityPerDay: parseInt(option.dataset.capacity || 0, 10)
+            };
+        }
+
+        function updateInventoryInfo(productId) {
+            const data = getOptionData(productId);
+            if (!data) {
+                inventoryInfo.style.display = 'none';
+                return;
+            }
+            availableStockElement.textContent = data.stock;
+            productionCapacityElement.textContent = data.productionCapacityPerDay || '0';
+            inventoryInfo.style.display = 'block';
+        }
+
+        function renderSelectedProducts() {
+            selectedProductsBody.innerHTML = '';
+            productInputs.innerHTML = '';
+            let totalQuantity = 0;
+            let totalPrice = 0;
+
+            if (selectedItems.length === 0) {
+                emptyMessage.classList.remove('hidden');
+            } else {
+                emptyMessage.classList.add('hidden');
+            }
+
+            selectedItems.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td><input type="number" min="1" value="${item.quantity}" onchange="updateQuantity('${item.id}', this.value)" /></td>
+                    <td>${formatPrice(item.price)}</td>
+                    <td><button type="button" onclick="removeProduct('${item.id}')">Delete</button></td>
+                `;
+                selectedProductsBody.appendChild(row);
+
+                productInputs.insertAdjacentHTML('beforeend', `<input type="hidden" name="productIds" value="${item.id}" />`);
+                productInputs.insertAdjacentHTML('beforeend', `<input type="hidden" name="quantities" value="${item.quantity}" />`);
+
+                totalQuantity += item.quantity;
+                totalPrice += item.quantity * item.price;
+            });
+
+            totalQuantityElement.textContent = totalQuantity;
+            totalPriceElement.textContent = formatPrice(totalPrice);
+        }
+
+        function addProduct() {
+            const productId = productSelect.value;
+            const quantity = parseInt(productQuantity.value, 10);
+            if (!productId) {
+                alert('Please select a product.');
+                return;
+            }
+            if (!quantity || quantity < 1) {
+                alert('Quantity must be at least 1.');
+                return;
+            }
+
+            const optionData = getOptionData(productId);
+            if (!optionData) {
+                alert('Selected product is not valid.');
+                return;
+            }
+
+            const existing = selectedItems.find(item => item.id === productId);
+            if (existing) {
+                existing.quantity += quantity;
+            } else {
+                selectedItems.push({ id: productId, name: optionData.name, price: optionData.price, quantity });
+            }
+            renderSelectedProducts();
+        }
+
+        function updateQuantity(productId, quantityValue) {
+            const quantity = parseInt(quantityValue, 10);
+            if (!quantity || quantity < 1) {
+                alert('Quantity must be at least 1.');
+                renderSelectedProducts();
+                return;
+            }
+            const item = selectedItems.find(item => item.id === String(productId));
+            if (item) {
+                item.quantity = quantity;
+                renderSelectedProducts();
+            }
+        }
+
+        function removeProduct(productId) {
+            const index = selectedItems.findIndex(item => item.id === String(productId));
+            if (index !== -1) {
+                selectedItems.splice(index, 1);
+                renderSelectedProducts();
+            }
+        }
+
+        document.getElementById('addProductButton').addEventListener('click', addProduct);
+        productSelect.addEventListener('change', function () {
+            updateInventoryInfo(this.value);
+        });
+
+        if (selectedProductId) {
+            productSelect.value = selectedProductId;
+            updateInventoryInfo(selectedProductId);
+        }
+
+        renderSelectedProducts();
+    </script>
 
     <p>
         <a href="/users/distributor/orders">View My Orders</a> |

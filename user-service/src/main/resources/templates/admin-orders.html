@@ -33,7 +33,9 @@
                     <th>Distributor ID</th>
                     <th>Quantity</th>
                     <th>Status</th>
-                    <th>Fulfillment Time</th>
+                    <th>Fulfilled</th>
+                    <th>Pending</th>
+                    <th>ETA Days</th>
                     <th>Customer Message</th>
                     <th>Admin Response</th>
                     <th>Created</th>
@@ -47,19 +49,18 @@
                     <td th:text="${o.distributorId}"></td>
                     <td th:text="${o.quantity}"></td>
                     <td th:text="${o.status}"></td>
-                    <td th:text="${o.fulfillmentTime}"></td>
+                    <td th:text="${o.fulfilledQuantity}"></td>
+                    <td th:text="${o.pendingQuantity}"></td>
+                    <td th:text="${o.estimatedFulfillmentDays}"></td>
                     <td th:text="${o.customMessage}"></td>
                     <td th:text="${o.adminMessage}"></td>
                     <td th:text="${o.createdAt}"></td>
                     <td>
                         <div th:if="${o.status == 'PENDING_APPROVAL'}">
-                            <form th:action="@{/users/admin/orders/{id}/approve(id=${o.id})}" method="post">
+                            <form method="post">
                                 <textarea name="adminMessage" rows="2" cols="20" placeholder="Response message"></textarea><br/>
-                                <button type="submit">Approve</button>
-                            </form>
-                            <form th:action="@{/users/admin/orders/{id}/deny(id=${o.id})}" method="post" style="margin-top: 4px;">
-                                <textarea name="adminMessage" rows="2" cols="20" placeholder="Response message"></textarea><br/>
-                                <button type="submit">Deny</button>
+                                <button type="submit" th:formaction="@{/users/admin/orders/{id}/approve(id=${o.id})}">Approve</button>
+                                <button type="submit" th:formaction="@{/users/admin/orders/{id}/deny(id=${o.id})}" style="margin-left: 4px;">Deny</button>
                             </form>
                         </div>
                         <div th:if="${o.status != 'PENDING_APPROVAL'}">

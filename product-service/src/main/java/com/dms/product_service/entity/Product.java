@@ -38,6 +38,8 @@ public class Product {
     @Transient
     private Integer stock;
 
+    private Integer productionCapacityPerDay;
+
     @Column(nullable = false)
     private Boolean active;
 }

@@ -84,35 +84,16 @@ public class OrderService {
         boolean willCancel = "CANCELLED".equalsIgnoreCase(status);
 
         if (!wasApproved && willApprove) {
-            if (!"PENDING_APPROVAL".equalsIgnoreCase(order.getStatus())) {
-                boolean retry = false;
-                try {
-                    inventoryClient.adjustStock(order.getProductId(), -order.getQuantity());
-                } catch (RuntimeException ex) {
-                    if (ex.getMessage() != null && ex.getMessage().contains("Inventory item not found")) {
-                        ProductResponse product = productClient.getProduct(order.getProductId());
-                        inventoryClient.createInventory(order.getProductId(), product.getStock() != null ? product.getStock() : 0, "DEFAULT");
-                        retry = true;
-                    } else {
-                        throw new OrderBadRequestException("Unable to approve order: " + ex.getMessage(), ex);
-                    }
-                }
-
-                if (retry) {
-                    try {
-                        inventoryClient.adjustStock(order.getProductId(), -order.getQuantity());
-                    } catch (RuntimeException ex) {
-                        throw new OrderBadRequestException("Unable to approve order: " + ex.getMessage(), ex);
-                    }
-                }
-            }
+            allocateFulfillment(order);
+        } else {
+            order.setStatus(status);
         }
 
         if (wasApproved && willCancel) {
-            inventoryClient.adjustStock(order.getProductId(), order.getQuantity());
+            int restockQuantity = order.getFulfilledQuantity() != null ? order.getFulfilledQuantity() : order.getQuantity();
+            inventoryClient.adjustStock(order.getProductId(), restockQuantity);
         }
 
-        order.setStatus(status);
         if (adminMessage != null) {
             order.setAdminMessage(adminMessage);
         }
@@ -145,5 +126,79 @@ public class OrderService {
                 LocalDateTime.now()
         ));
         orderRepository.delete(order);
+    }
+
+    private void allocateFulfillment(OrderEntity order) {
+        int availableStock;
+        try {
+            Integer stock = inventoryClient.getStock(order.getProductId());
+            availableStock = stock != null ? stock : 0;
+        } catch (RuntimeException ex) {
+            availableStock = 0;
+        }
+
+        int alreadyFulfilled = order.getFulfilledQuantity() != null ? order.getFulfilledQuantity() : 0;
+        int pendingBefore = order.getPendingQuantity() != null ? order.getPendingQuantity() : order.getQuantity() - alreadyFulfilled;
+        int allocate = Math.min(availableStock, pendingBefore);
+        if (allocate > 0) {
+            inventoryClient.adjustStock(order.getProductId(), -allocate);
+            availableStock -= allocate;
+        }
+
+        int remainingPending = pendingBefore - allocate;
+        if (remainingPending > 0) {
+            ProductResponse product = productClient.getProduct(order.getProductId());
+            int capacity = product.getProductionCapacityPerDay() != null ? product.getProductionCapacityPerDay() : 0;
+            int estimatedDays = capacity > 0 ? (int) Math.ceil((double) remainingPending / capacity) : 0;
+            order.setFulfilledQuantity(alreadyFulfilled + allocate);
+            order.setPendingQuantity(remainingPending);
+            order.setEstimatedFulfillmentDays(estimatedDays);
+            order.setStatus("PARTIALLY_FULFILLED");
+        } else {
+            order.setFulfilledQuantity(order.getQuantity());
+            order.setPendingQuantity(0);
+            order.setEstimatedFulfillmentDays(0);
+            order.setStatus("APPROVED");
+        }
+    }
+
+    @Transactional
+    public void recalculateFulfillmentForProduct(Long productId) {
+        int availableStock;
+        try {
+            Integer stock = inventoryClient.getStock(productId);
+            availableStock = stock != null ? stock : 0;
+        } catch (RuntimeException ex) {
+            availableStock = 0;
+        }
+
+        ProductResponse product = productClient.getProduct(productId);
+        int capacity = product.getProductionCapacityPerDay() != null ? product.getProductionCapacityPerDay() : 0;
+
+        List<String> statuses = List.of("PARTIALLY_FULFILLED", "APPROVED");
+        List<OrderEntity> orders = orderRepository.findByProductIdAndStatusInOrderByCreatedAtAsc(productId, statuses);
+        for (OrderEntity order : orders) {
+            int alreadyFulfilled = order.getFulfilledQuantity() != null ? order.getFulfilledQuantity() : 0;
+            int pendingBefore = order.getPendingQuantity() != null ? order.getPendingQuantity() : order.getQuantity() - alreadyFulfilled;
+            if (pendingBefore <= 0) {
+                continue;
+            }
+
+            int allocate = Math.min(availableStock, pendingBefore);
+            if (allocate > 0) {
+                try {
+                    inventoryClient.adjustStock(productId, -allocate);
+                    availableStock -= allocate;
+                } catch (RuntimeException ex) {
+                    allocate = 0;
+                }
+            }
+            int remainingPending = pendingBefore - allocate;
+            order.setFulfilledQuantity(alreadyFulfilled + allocate);
+            order.setPendingQuantity(remainingPending);
+            order.setEstimatedFulfillmentDays(remainingPending > 0 && capacity > 0 ? (int) Math.ceil((double) remainingPending / capacity) : 0);
+            order.setStatus(remainingPending > 0 ? "PARTIALLY_FULFILLED" : "APPROVED");
+            orderRepository.save(order);
+        }
     }
 }

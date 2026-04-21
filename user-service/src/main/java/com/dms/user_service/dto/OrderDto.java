@@ -19,5 +19,8 @@ public class OrderDto {
     private String customMessage;
     private LocalDateTime fulfillmentTime;
     private String adminMessage;
+    private Integer fulfilledQuantity;
+    private Integer pendingQuantity;
+    private Integer estimatedFulfillmentDays;
     private LocalDateTime createdAt;
 }

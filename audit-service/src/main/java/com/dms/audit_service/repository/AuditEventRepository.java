@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
     List<AuditEvent> findByTargetType(String targetType);
+    List<AuditEvent> findByTargetId(String targetId);
+    List<AuditEvent> findByTargetTypeAndTargetId(String targetType, String targetId);
 }

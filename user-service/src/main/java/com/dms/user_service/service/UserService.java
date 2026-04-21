@@ -119,6 +119,49 @@ public class UserService {
     }
 
     @Transactional
+    public User registerDistributorByAdmin(AdminDistributorRegisterRequest request) {
+        log.info("Admin register distributor attempt: {}", request.getUsername());
+        ensureUsernameAvailable(request.getUsername());
+        ensurePasswordsMatch(request.getPassword(), request.getConfirmPassword());
+
+        User newUser = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(User.Role.DISTRIBUTOR)
+                .approvalStatus(ApprovalStatus.PENDING)
+                .build();
+
+        DistributorDto distributor = new DistributorDto();
+        distributor.setName(request.getDistributorName());
+        distributor.setEmail(request.getDistributorEmail());
+        distributor.setCity(request.getDistributorCity());
+        distributor.setContact(request.getDistributorContact());
+
+        DistributorDto createdDistributor = restTemplate.postForObject(
+                distributorServiceUrl + "/distributors",
+                distributor,
+                DistributorDto.class
+        );
+        if (createdDistributor == null || createdDistributor.getId() == null) {
+            throw new RuntimeException("Unable to create distributor details.");
+        }
+        newUser.setDistributorId(createdDistributor.getId());
+
+        User saved = userRepository.save(newUser);
+        log.info("Distributor saved with id: {}", saved.getId());
+        auditClient.logEvent(new AuditEventDto(
+                null,
+                "DISTRIBUTOR_REGISTER",
+                saved.getUsername(),
+                "USER",
+                String.valueOf(saved.getId()),
+                "New distributor registered by admin",
+                LocalDateTime.now()
+        ));
+        return saved;
+    }
+
+    @Transactional
     public User registerAdmin(AdminRegisterRequest request) {
         log.info("Register admin attempt: {}", request.getUsername());
         ensureUsernameAvailable(request.getUsername());
@@ -176,7 +219,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(Long id, UserUpdateRequest request) {
+    public User updateUser(Long id, UserUpdateRequest request, boolean isAdmin, boolean isSelfUpdate) {
         User user = getUserById(id);
         if (request.getUsername() != null && !request.getUsername().isBlank()
                 && !request.getUsername().equals(user.getUsername())) {
@@ -193,6 +236,15 @@ public class UserService {
             }
         }
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            boolean requiresOldPassword = !isAdmin || isSelfUpdate || user.getRole() != User.Role.DISTRIBUTOR;
+            if (requiresOldPassword) {
+                if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
+                    throw new RuntimeException("Old password is required to change your password.");
+                }
+                if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+                    throw new RuntimeException("Old password is incorrect.");
+                }
+            }
             ensurePasswordsMatch(request.getNewPassword(), request.getConfirmPassword());
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         }

@@ -27,4 +27,10 @@ public class OrderDetails {
 
     @Column(length = 2000)
     private String adminMessage;
+
+    private Integer fulfilledQuantity;
+
+    private Integer pendingQuantity;
+
+    private Integer estimatedFulfillmentDays;
 }

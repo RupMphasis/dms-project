@@ -47,4 +47,9 @@ public class InventoryClient {
         newItem.setLocation(location);
         restTemplate.postForObject(inventoryServiceUrl + "/api/inventory", newItem, InventoryItemDto.class);
     }
+
+    public void adjustStock(Long productId, Integer delta) {
+        String url = String.format("%s/api/inventory/%d/adjust?delta=%d", inventoryServiceUrl, productId, delta != null ? delta : 0);
+        restTemplate.postForEntity(url, null, Void.class);
+    }
 }

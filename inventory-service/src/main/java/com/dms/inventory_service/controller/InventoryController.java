@@ -3,8 +3,10 @@ package com.dms.inventory_service.controller;
 import com.dms.inventory_service.entity.InventoryItem;
 import com.dms.inventory_service.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -14,6 +16,9 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+
+    @Value("${order.service.url:http://localhost:8083}")
+    private String orderServiceUrl;
 
     @GetMapping
     public ResponseEntity<List<InventoryItem>> getAll() {
@@ -32,12 +37,22 @@ public class InventoryController {
 
     @PostMapping
     public ResponseEntity<InventoryItem> create(@RequestBody InventoryItem item) {
-        return ResponseEntity.ok(inventoryService.create(item));
+        InventoryItem created = inventoryService.create(item);
+        try {
+            recalculateProductOrders(created.getProductId());
+        } catch (Exception ignored) {
+        }
+        return ResponseEntity.ok(created);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<InventoryItem> update(@PathVariable Long id, @RequestBody InventoryItem item) {
-        return ResponseEntity.ok(inventoryService.update(id, item));
+        InventoryItem updated = inventoryService.update(id, item);
+        try {
+            recalculateProductOrders(updated.getProductId());
+        } catch (Exception ignored) {
+        }
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -49,6 +64,16 @@ public class InventoryController {
     @PostMapping("/{productId}/adjust")
     public ResponseEntity<Void> adjustStock(@PathVariable Long productId, @RequestParam int delta) {
         inventoryService.adjustStock(productId, delta);
+        try {
+            recalculateProductOrders(productId);
+        } catch (Exception ignored) {
+        }
         return ResponseEntity.ok().build();
+    }
+
+    private void recalculateProductOrders(Long productId) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = orderServiceUrl + "/api/orders/product/" + productId + "/recalculate";
+        restTemplate.postForEntity(url, null, Void.class);
     }
 }

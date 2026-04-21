@@ -46,6 +46,12 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateStatus(id, decision.getStatus(), decision.getAdminMessage()));
     }
 
+    @PostMapping("/product/{productId}/recalculate")
+    public ResponseEntity<Void> recalculateProductOrders(@PathVariable Long productId) {
+        orderService.recalculateFulfillmentForProduct(productId);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         orderService.delete(id);

@@ -21,6 +21,11 @@
                     <th>Product ID</th>
                     <th>Quantity</th>
                     <th>Status</th>
+                    <th>Fulfilled</th>
+                    <th>Pending</th>
+                    <th>ETA Days</th>
+                    <th>Customer Message</th>
+                    <th>Admin Response</th>
                     <th>Created</th>
                     <th>Action</th>
                 </tr>
@@ -31,6 +36,11 @@
                     <td th:text="${o.productId}"></td>
                     <td th:text="${o.quantity}"></td>
                     <td th:text="${o.status}"></td>
+                    <td th:text="${o.fulfilledQuantity}"></td>
+                    <td th:text="${o.pendingQuantity}"></td>
+                    <td th:text="${o.estimatedFulfillmentDays}"></td>
+                    <td th:text="${o.customMessage}"></td>
+                    <td th:text="${o.adminMessage}"></td>
                     <td th:text="${o.createdAt}"></td>
                     <td>
                         <form th:action="@{/users/distributor/orders/{id}/delete(id=${o.id})}" method="post">
@@ -44,7 +54,6 @@
 
     <p>
         <a href="/users/distributor/products">Continue Shopping</a> |
-        <a href="/users/distributor/cart">View Cart</a> |
         <a href="/users/distributor/dashboard">Dashboard</a> |
         <a href="/users/logout">Logout</a>
     </p>

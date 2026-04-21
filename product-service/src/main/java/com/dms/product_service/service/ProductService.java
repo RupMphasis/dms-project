@@ -6,8 +6,10 @@ import com.dms.product_service.dto.AuditEventDto;
 import com.dms.product_service.entity.Product;
 import com.dms.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +21,10 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final InventoryClient inventoryClient;
     private final AuditClient auditClient;
+    private final RestTemplate restTemplate;
+
+    @Value("${order.service.url:http://localhost:8083}")
+    private String orderServiceUrl;
 
     public List<Product> findAll() {
         List<Product> products = productRepository.findAll();
@@ -54,6 +60,10 @@ public class ProductService {
         } catch (RuntimeException ex) {
             throw new RuntimeException("Product created but failed to update inventory: " + ex.getMessage(), ex);
         }
+        try {
+            recalculateProductOrders(saved.getId());
+        } catch (Exception ignored) {
+        }
         auditClient.logEvent(new AuditEventDto(
                 null,
                 "PRODUCT_CREATED",
@@ -72,12 +82,17 @@ public class ProductService {
         existing.setName(incoming.getName());
         existing.setDescription(incoming.getDescription());
         existing.setPrice(incoming.getPrice());
+        existing.setProductionCapacityPerDay(incoming.getProductionCapacityPerDay());
         existing.setActive(incoming.getActive());
         Product saved = productRepository.save(existing);
         Integer requestedStock = incoming.getStock();
         if (requestedStock != null) {
             inventoryClient.setStock(saved.getId(), requestedStock, "DEFAULT");
             saved.setStock(requestedStock);
+        }
+        try {
+            recalculateProductOrders(saved.getId());
+        } catch (Exception ignored) {
         }
         auditClient.logEvent(new AuditEventDto(
                 null,
@@ -113,5 +128,11 @@ public class ProductService {
             product.setStock(0);
         }
     }
+
+    private void recalculateProductOrders(Long productId) {
+        String url = orderServiceUrl + "/api/orders/product/" + productId + "/recalculate";
+        restTemplate.postForEntity(url, null, Void.class);
+    }
 }
+
 

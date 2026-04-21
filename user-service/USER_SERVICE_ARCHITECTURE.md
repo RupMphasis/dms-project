@@ -23,7 +23,7 @@
 - BCrypt for password hashing
 - Thymeleaf templates for server-rendered UI pages
 - `RestTemplate` for HTTP communication with other microservices
-- JSON Web Tokens (JJWT) for JWT generation and validation
+- JSON Web Tokens (JWT) for JWT generation and validation
 ---
 
 ## Directory and Component Flow

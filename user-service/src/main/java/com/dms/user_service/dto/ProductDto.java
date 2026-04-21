@@ -11,5 +11,6 @@ public class ProductDto {
     private String description;
     private Double price;
     private Integer stock;
+    private Integer productionCapacityPerDay;
     private Boolean active;
-}
+} 

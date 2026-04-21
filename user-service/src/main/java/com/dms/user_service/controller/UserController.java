@@ -1,11 +1,13 @@
 package com.dms.user_service.controller;
 
+import com.dms.user_service.dto.AdminDistributorRegisterRequest;
 import com.dms.user_service.dto.AdminRegisterRequest;
 import com.dms.user_service.dto.DistributorRegisterRequest;
 import com.dms.user_service.dto.LoginRequest;
 import com.dms.user_service.dto.LoginResponse;
 import com.dms.user_service.dto.UserUpdateRequest;
 import com.dms.user_service.entity.User;
+import com.dms.user_service.security.CustomUserDetails;
 import com.dms.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +51,12 @@ public class UserController {
         return ResponseEntity.ok(userService.registerAdmin(request));
     }
 
+    @PostMapping("/admin/distributors")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> registerDistributorByAdmin(@Valid @RequestBody AdminDistributorRegisterRequest request) {
+        return ResponseEntity.ok(userService.registerDistributorByAdmin(request));
+    }
+
     @GetMapping
     public ResponseEntity<List<User>> getUsers(@RequestParam(value = "role", required = false) String role) {
         return ResponseEntity.ok(userService.getUsers(role));
@@ -63,8 +71,15 @@ public class UserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == principal.id")
     public ResponseEntity<User> updateUser(@PathVariable Long id,
-                                           @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(userService.updateUser(id, request));
+                                           @Valid @RequestBody UserUpdateRequest request,
+                                           Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        boolean isSelfUpdate = false;
+        if (authentication.getPrincipal() instanceof CustomUserDetails currentUser) {
+            isSelfUpdate = currentUser.getId().equals(id);
+        }
+        return ResponseEntity.ok(userService.updateUser(id, request, isAdmin, isSelfUpdate));
     }
 
     @PutMapping("/distributors/{id}/approve")

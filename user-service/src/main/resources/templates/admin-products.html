@@ -25,6 +25,7 @@
                     <th>Description</th>
                     <th>Price</th>
                     <th>Stock</th>
+                    <th>Capacity/Day</th>
                     <th>Active</th>
                     <th>Actions</th>
                 </tr>
@@ -38,6 +39,7 @@
                     <td th:text="${p.description}"></td>
                     <td th:text="${p.price}"></td>
                     <td th:text="${p.stock}"></td>
+                    <td th:text="${p.productionCapacityPerDay}"></td>
                     <td th:text="${p.active}"></td>
                     <td>
                         <a th:href="@{'/users/admin/products/' + ${p.id} + '/edit'}">Edit</a>

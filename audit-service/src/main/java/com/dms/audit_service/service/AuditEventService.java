@@ -41,6 +41,18 @@ public class AuditEventService {
                 .collect(Collectors.toList());
     }
 
+    public List<AuditEventDto> findByTargetId(String targetId) {
+        return repository.findByTargetId(targetId).stream()
+                .map(AuditEventDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public List<AuditEventDto> findByTargetTypeAndTargetId(String targetType, String targetId) {
+        return repository.findByTargetTypeAndTargetId(targetType, targetId).stream()
+                .map(AuditEventDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     public AuditEventDto findById(Long id) {
         return repository.findById(id)
                 .map(AuditEventDto::fromEntity)

@@ -14,7 +14,6 @@
     </div>
 
     <p>
-        <a href="/users/distributor/cart">View Cart (<span th:text="${cartSize}">0</span>)</a> |
         <a href="/users/distributor/orders">My Orders</a> |
         <a href="/users/distributor/dashboard">Dashboard</a> |
         <a href="/users/logout">Logout</a>
@@ -29,8 +28,7 @@
                 <th>Size</th>
                 <th>Description</th>
                 <th>Price</th>
-                <th>Stock</th>
-                <th>Actions</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -41,18 +39,7 @@
                 <td th:text="${p.size}"></td>
                 <td th:text="${p.description}"></td>
                 <td th:text="${p.price}"></td>
-                <td th:text="${p.stock}"></td>
-                <td>
-                    <form th:action="@{/users/distributor/products/{id}/add(id=${p.id})}" method="post" style="display:inline;">
-                        <input type="number" name="quantity" min="1" th:max="${p.stock}" value="1" required/>
-                        <button type="submit">Add to Cart</button>
-                    </form>
-                    <form th:action="@{/users/distributor/order/checkout}" method="get" style="display:inline; margin-left: 8px;">
-                        <input type="hidden" name="productId" th:value="${p.id}" />
-                        <input type="number" name="quantity" min="1" th:max="${p.stock}" value="1" required/>
-                        <button type="submit">Buy Now</button>
-                    </form>
-                </td>
+                <td><a th:href="@{/users/distributor/order/create(productId=${p.id})}">Place Order</a></td>
             </tr>
         </tbody>
     </table>
