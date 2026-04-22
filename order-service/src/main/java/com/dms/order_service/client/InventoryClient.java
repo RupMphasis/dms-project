@@ -23,6 +23,14 @@ public class InventoryClient {
         }
     }
 
+    public void adjustDistributorStock(Long productId, Long distributorId, int delta, String transactionType, String note) {
+        String url = inventoryServiceUrl + "/api/distributor-inventory/" + productId + "/adjust?delta={delta}&distributorId={distributorId}&transactionType={type}&note={note}";
+        ResponseEntity<Void> response = restTemplate.postForEntity(url, null, Void.class, delta, distributorId, transactionType, note);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to adjust distributor inventory for productId " + productId);
+        }
+    }
+
     public Integer getStock(Long productId) {
         String url = String.format("%s/api/inventory/product/%d", inventoryServiceUrl, productId);
         ResponseEntity<InventoryResponse> response = restTemplate.getForEntity(url, InventoryResponse.class);

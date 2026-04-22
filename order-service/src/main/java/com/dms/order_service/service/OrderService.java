@@ -142,6 +142,7 @@ public class OrderService {
         int allocate = Math.min(availableStock, pendingBefore);
         if (allocate > 0) {
             inventoryClient.adjustStock(order.getProductId(), -allocate);
+            inventoryClient.adjustDistributorStock(order.getProductId(), order.getDistributorId(), allocate, "PURCHASE", "Order_Fulfillment");
             availableStock -= allocate;
         }
 
@@ -188,6 +189,7 @@ public class OrderService {
             if (allocate > 0) {
                 try {
                     inventoryClient.adjustStock(productId, -allocate);
+                    inventoryClient.adjustDistributorStock(productId, order.getDistributorId(), allocate, "PURCHASE", "Order_Fulfillment");
                     availableStock -= allocate;
                 } catch (RuntimeException ex) {
                     allocate = 0;

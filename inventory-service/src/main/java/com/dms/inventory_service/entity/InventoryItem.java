@@ -26,4 +26,7 @@ public class InventoryItem {
 
     @Column(nullable = false)
     private String location;
+
+    @Column(name = "total_sold", nullable = false, columnDefinition = "int default 0")
+    private Integer totalSold = 0;
 }

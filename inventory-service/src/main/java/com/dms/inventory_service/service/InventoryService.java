@@ -57,6 +57,9 @@ public class InventoryService {
             throw new InventoryBadRequestException("Insufficient inventory for productId: " + productId);
         }
         item.setQuantity(newQty);
+        if (delta < 0) {
+            item.setTotalSold((item.getTotalSold() == null ? 0 : item.getTotalSold()) + Math.abs(delta));
+        }
         inventoryRepository.save(item);
     }
 
