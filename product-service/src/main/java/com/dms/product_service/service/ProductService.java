@@ -2,6 +2,7 @@ package com.dms.product_service.service;
 
 import com.dms.product_service.client.AuditClient;
 import com.dms.product_service.client.InventoryClient;
+import com.dms.product_service.client.OrderClient;
 import com.dms.product_service.dto.AuditEventDto;
 import com.dms.product_service.entity.Product;
 import com.dms.product_service.repository.ProductRepository;
@@ -21,6 +22,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final InventoryClient inventoryClient;
     private final AuditClient auditClient;
+    private final OrderClient orderClient;
     private final RestTemplate restTemplate;
 
     @Value("${order.service.url:http://localhost:8083}")
@@ -109,6 +111,32 @@ public class ProductService {
     @Transactional
     public void delete(Long id) {
         Product product = getById(id);
+
+        // ── 1. Check active orders ─────────────────────────────────────────────
+        long activeOrders = orderClient.countActiveOrdersByProduct(id);
+        if (activeOrders > 0) {
+            throw new IllegalStateException(
+                    "Cannot delete product '" + product.getName() + "': it still has "
+                    + activeOrders + " active order(s). Cancel or reject them first.");
+        }
+
+        // ── 2. Check central inventory row ────────────────────────────────────
+        boolean hasInventory = inventoryClient.existsInventoryForProduct(id);
+        if (hasInventory) {
+            throw new IllegalStateException(
+                    "Cannot delete product '" + product.getName() + "': a central inventory record still exists. "
+                    + "Delete the inventory entry first.");
+        }
+
+        // ── 3. Check distributor inventory rows ───────────────────────────────
+        long distInvCount = inventoryClient.countDistributorInventoryByProduct(id);
+        if (distInvCount > 0) {
+            throw new IllegalStateException(
+                    "Cannot delete product '" + product.getName() + "': "
+                    + distInvCount + " distributor inventory record(s) still reference it. "
+                    + "Clear all distributor inventory for this product first.");
+        }
+
         auditClient.logEvent(new AuditEventDto(
                 null,
                 "PRODUCT_DELETED",

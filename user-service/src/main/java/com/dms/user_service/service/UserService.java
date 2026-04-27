@@ -448,7 +448,12 @@ public class UserService {
         if (distributorId == null) {
             return null;
         }
-        return restTemplate.getForObject(distributorServiceUrl + "/distributors/" + distributorId, DistributorDto.class);
+        try {
+            return restTemplate.getForObject(distributorServiceUrl + "/distributors/" + distributorId, DistributorDto.class);
+        } catch (Exception ex) {
+            log.warn("Could not fetch distributor {}: {}", distributorId, ex.getMessage());
+            return null;
+        }
     }
 
     public DistributorViewDto getDistributorViewByUserId(Long userId) {
@@ -595,7 +600,71 @@ public class UserService {
         if ("admin".equals(user.getUsername())) {
             throw new RuntimeException("Cannot delete the default system admin account.");
         }
+
+        // For distributor users, verify all cross-service dependencies are cleared first
+        if (user.getRole() == User.Role.DISTRIBUTOR && user.getDistributorId() != null) {
+            Long distributorId = user.getDistributorId();
+
+            // ── 1. Check active orders ────────────────────────────────────────
+            try {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> orderCountRes = restTemplate.getForObject(
+                        "http://localhost:8083/api/orders/count/distributor/" + distributorId,
+                        java.util.Map.class);
+                long activeOrders = orderCountRes != null && orderCountRes.get("count") != null
+                        ? ((Number) orderCountRes.get("count")).longValue() : 0L;
+                if (activeOrders > 0) {
+                    throw new RuntimeException(
+                            "Cannot delete distributor user '" + user.getUsername() + "': "
+                            + activeOrders + " active order(s) still reference this distributor. "
+                            + "Cancel or reject them first.");
+                }
+            } catch (RuntimeException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new RuntimeException("Unable to verify active orders for distributor "
+                        + distributorId + ": " + ex.getMessage(), ex);
+            }
+
+            // ── 2. Check distributor inventory records ────────────────────────
+            try {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> invCountRes = restTemplate.getForObject(
+                        "http://localhost:8085/api/distributor-inventory/count/distributor/" + distributorId,
+                        java.util.Map.class);
+                long invCount = invCountRes != null && invCountRes.get("count") != null
+                        ? ((Number) invCountRes.get("count")).longValue() : 0L;
+                if (invCount > 0) {
+                    throw new RuntimeException(
+                            "Cannot delete distributor user '" + user.getUsername() + "': "
+                            + invCount + " distributor inventory record(s) still exist. "
+                            + "Clear all distributor inventory first.");
+                }
+            } catch (RuntimeException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new RuntimeException("Unable to verify distributor inventory for distributor "
+                        + distributorId + ": " + ex.getMessage(), ex);
+            }
+
+            // ── 3. All clear — delete the linked distributor record ───────────
+            try {
+                restTemplate.delete(distributorServiceUrl + "/distributors/" + distributorId);
+            } catch (Exception ex) {
+                log.warn("Could not delete distributor record {}: {}", distributorId, ex.getMessage());
+            }
+        }
+
+        auditClient.logEvent(new AuditEventDto(
+                null,
+                "USER_DELETED",
+                user.getUsername(),
+                "USER",
+                String.valueOf(user.getId()),
+                "User account deleted",
+                LocalDateTime.now()
+        ));
         userRepository.deleteById(id);
         return "User deleted successfully. ID: " + id;
     }
-}
+}

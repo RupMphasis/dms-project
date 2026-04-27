@@ -11,4 +11,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     List<OrderEntity> findByDistributorId(Long distributorId);
     List<OrderEntity> findByProductId(Long productId);
     List<OrderEntity> findByProductIdAndStatusInOrderByCreatedAtAsc(Long productId, List<String> statuses);
-}
+    long countByProductIdAndStatusNotIn(Long productId, List<String> terminalStatuses);
+    long countByDistributorIdAndStatusNotIn(Long distributorId, List<String> terminalStatuses);
+}

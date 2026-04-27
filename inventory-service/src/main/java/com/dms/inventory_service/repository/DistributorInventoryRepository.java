@@ -11,4 +11,7 @@ import java.util.Optional;
 public interface DistributorInventoryRepository extends JpaRepository<DistributorInventoryItem, Long> {
     List<DistributorInventoryItem> findByDistributorId(Long distributorId);
     Optional<DistributorInventoryItem> findByProductIdAndDistributorId(Long productId, Long distributorId);
+    long countByProductId(Long productId);
+    long countByDistributorId(Long distributorId);
 }
+

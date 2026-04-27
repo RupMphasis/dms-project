@@ -2,12 +2,14 @@ package com.dms.order_service.controller;
 
 import com.dms.order_service.dto.OrderDecisionDto;
 import com.dms.order_service.entity.OrderEntity;
+import com.dms.order_service.repository.OrderRepository;
 import com.dms.order_service.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -15,6 +17,9 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderRepository orderRepository;
+
+    private static final List<String> TERMINAL_STATUSES = List.of("CANCELLED", "REJECTED");
 
     @GetMapping
     public ResponseEntity<List<OrderEntity>> getAll() {
@@ -57,4 +62,25 @@ public class OrderController {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Returns the count of non-terminal (active) orders referencing a product.
+     * Used by product-service before deleting a product to enforce ACID integrity.
+     */
+    @GetMapping("/count/product/{productId}")
+    public ResponseEntity<Map<String, Long>> countActiveByProduct(@PathVariable Long productId) {
+        long count = orderRepository.countByProductIdAndStatusNotIn(productId, TERMINAL_STATUSES);
+        return ResponseEntity.ok(Map.of("count", count));
+    }
+
+    /**
+     * Returns the count of non-terminal (active) orders referencing a distributor.
+     * Used by user-service / distributor-service before deleting a distributor.
+     */
+    @GetMapping("/count/distributor/{distributorId}")
+    public ResponseEntity<Map<String, Long>> countActiveByDistributor(@PathVariable Long distributorId) {
+        long count = orderRepository.countByDistributorIdAndStatusNotIn(distributorId, TERMINAL_STATUSES);
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 }
+
