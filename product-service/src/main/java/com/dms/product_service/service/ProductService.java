@@ -82,6 +82,8 @@ public class ProductService {
     public Product update(Long id, Product incoming) {
         Product existing = getById(id);
         existing.setName(incoming.getName());
+        existing.setVehicleType(incoming.getVehicleType());
+        existing.setSize(incoming.getSize());
         existing.setDescription(incoming.getDescription());
         existing.setPrice(incoming.getPrice());
         existing.setProductionCapacityPerDay(incoming.getProductionCapacityPerDay());
