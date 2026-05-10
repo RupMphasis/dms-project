@@ -7,7 +7,6 @@ This repository contains a set of Spring Boot microservices for the DMS applicat
 | Service | Module | Default port |
 |---|---|---|
 | Eureka Server | `eureka-server` | `8761` |
-| API Gateway | `api-gateway` | `8081` |
 | User Service | `user-service` | `8082` |
 | Order Service | `order-service` | `8083` |
 | Product Service | `product-service` | `8084` |
@@ -65,9 +64,6 @@ cd ..\order-service
 
 cd ..\user-service
 .\mvnw.cmd spring-boot:run
-
-cd ..\api-gateway
-.\mvnw.cmd spring-boot:run
 ```
 
 3. Optionally start the distributor service if needed:
@@ -96,7 +92,6 @@ cd user-service
 ## Access URLs
 
 - Eureka dashboard: `http://localhost:8761`
-- API Gateway: `http://localhost:8081`
 - User service UI: `http://localhost:8082/users/login`
 
 ## Notes
